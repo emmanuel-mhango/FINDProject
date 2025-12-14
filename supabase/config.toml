@@ -1,0 +1,7 @@
+project_id = "mxwdvijsmmpxgdnhyetj"
+
+[functions.ai-assistant]
+verify_jwt = false
+
+[functions.calculate-distance]
+verify_jwt = true
