@@ -13,7 +13,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { useToast } from '@/components/ui/use-toast';
 import PasswordValidator from '@/components/PasswordValidator';
 import { malawianUniversities } from '@/data/universities';
-import { supabase } from '@/integrations/supabase/client';
 
 interface RegisterFormValues {
   firstName: string;
@@ -31,7 +30,6 @@ const Register = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [password, setPassword] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
   
   const form = useForm<RegisterFormValues>({
     defaultValues: {
@@ -57,7 +55,7 @@ const Register = () => {
     return validations.every(valid => valid);
   };
 
-  const onSubmit = async (data: RegisterFormValues) => {
+  const onSubmit = (data: RegisterFormValues) => {
     if (data.password !== data.confirmPassword) {
       form.setError('confirmPassword', { 
         message: "Passwords don't match" 
@@ -71,63 +69,18 @@ const Register = () => {
       });
       return;
     }
-
-    setIsLoading(true);
-
-    try {
-      const { data: authData, error } = await supabase.auth.signUp({
-        email: data.email,
-        password: data.password,
-        options: {
-          emailRedirectTo: `${window.location.origin}/`,
-          data: {
-            full_name: `${data.firstName} ${data.lastName}`,
-          }
-        }
-      });
-
-      if (error) {
-        toast({
-          title: "Sign Up Failed",
-          description: error.message,
-          variant: "destructive",
-        });
-      } else if (authData.user) {
-        // Create profile
-        const { error: profileError } = await supabase
-          .from('profiles')
-          .insert([
-            {
-              user_id: authData.user.id,
-              full_name: `${data.firstName} ${data.lastName}`,
-              phone: '', // No phone in form
-              university: data.university,
-              program: data.registrationNumber || '',
-              gender: '', // No gender in form
-            }
-          ]);
-
-        if (profileError) {
-          console.error('Profile creation error:', profileError);
-        }
-
-        toast({
-          title: "Account Created!",
-          description: "Please check your email to verify your account.",
-        });
-
-        // Navigate to welcome or signin
-        navigate('/signin');
-      }
-    } catch (error) {
-      toast({
-        title: "Error",
-        description: "An unexpected error occurred.",
-        variant: "destructive",
-      });
-    } finally {
-      setIsLoading(false);
-    }
+    
+    // Save user data to localStorage
+    localStorage.setItem('userData', JSON.stringify(data));
+    
+    // Show success toast
+    toast({
+      title: "Registration successful",
+      description: "Your account has been created",
+    });
+    
+    // Navigate to welcome page with user data
+    navigate('/welcome', { state: { firstName: data.firstName, lastName: data.lastName } });
   };
 
   return (
@@ -302,8 +255,8 @@ const Register = () => {
                 />
               </CardContent>
               <CardFooter className="flex flex-col">
-                <Button type="submit" className="w-full bg-find-red hover:bg-red-700" disabled={isLoading}>
-                  {isLoading ? "Creating account..." : "Create account"}
+                <Button type="submit" className="w-full bg-find-red hover:bg-red-700">
+                  Create account
                 </Button>
                 <div className="mt-4 text-center text-sm">
                   Already have an account?{" "}
