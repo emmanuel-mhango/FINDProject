@@ -9,6 +9,7 @@ import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import { Link } from 'react-router-dom';
 import { useToast } from '@/components/ui/use-toast';
+import { supabase } from '@/integrations/supabase/client';
 
 const SignIn = () => {
   const navigate = useNavigate();
@@ -17,49 +18,40 @@ const SignIn = () => {
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
-  const handleSignIn = (e: React.FormEvent) => {
+  const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
     
-    // Simulate API call with timeout
-    setTimeout(() => {
-      // Check if user exists in localStorage
-      const userData = localStorage.getItem('userData');
-      
-      if (userData) {
-        const user = JSON.parse(userData);
-        
-        if (user.email === email && user.password === password) {
-          // Successful login
-          toast({
-            title: "Welcome back",
-            description: `Signed in as ${user.firstName} ${user.lastName}`,
-          });
-          
-          // Navigate to profile page
-          navigate('/profile');
-        } else {
-          // Failed login
-          toast({
-            title: "Login failed",
-            description: "Invalid email or password",
-            variant: "destructive",
-          });
-        }
-      } else {
-        // No user found
+    try {
+      const { error } = await supabase.auth.signInWithPassword({
+        email: email,
+        password: password,
+      });
+
+      if (error) {
         toast({
-          title: "Account not found",
-          description: "Please register first",
+          title: "Sign In Failed",
+          description: error.message,
           variant: "destructive",
         });
+      } else {
+        toast({
+          title: "Welcome back",
+          description: `Signed in successfully`,
+        });
         
-        // Redirect to registration
-        navigate('/register');
+        // Navigate to profile page
+        navigate('/profile');
       }
-      
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "An unexpected error occurred.",
+        variant: "destructive",
+      });
+    } finally {
       setIsLoading(false);
-    }, 1000);
+    }
   };
 
   return (
