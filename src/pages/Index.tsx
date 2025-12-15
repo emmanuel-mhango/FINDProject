@@ -53,7 +53,7 @@ const Index = () => {
                 size="lg"
                 onClick={scrollToServices}
               >
-                Get Started
+                Our services
               </Button>
             </>
           ) : (
@@ -63,11 +63,11 @@ const Index = () => {
                 Your all-in-one solution for finding taxi, job opportunities, and compatible roommates.
               </p>
               <Button 
-                className="action-button text-lg px-8 py-6 hover-scale" 
+                className="action-button text-lg font-bold px-8 py-6 hover-scale" 
                 size="lg"
                 onClick={() => navigate('/signin')}
               >
-                Get Started
+                Sign Up
               </Button>
             </>
           )}

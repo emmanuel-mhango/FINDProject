@@ -11,7 +11,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
-import { Car, MapPin, Phone, CreditCard, FileText, Receipt, CheckCircle, Users } from 'lucide-react';
+import { Car, MapPin, Phone, CreditCard, FileText, Receipt, CheckCircle, CircleX , Users } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
@@ -35,6 +35,7 @@ const TaxiBooking = () => {
   const [cardDetails, setCardDetails] = useState({ number: '', expiry: '', cvv: '', name: '' });
   const [isProcessingPayment, setIsProcessingPayment] = useState(false);
   const [showReceipt, setShowReceipt] = useState(false);
+  const [showMobile, setShowMobile] = useState(false);
   const [bookingConfirmed, setBookingConfirmed] = useState(false);
   const [bookingId, setBookingId] = useState<string>('');
   const [isCalculating, setIsCalculating] = useState(false);
@@ -145,10 +146,11 @@ const TaxiBooking = () => {
       if (values.paymentMethod === 'cash') {
         confirmBooking();
       } else if(values.paymentMethod === 'mobile-money') {
-        toast({
+        setShowMobile(true);
+        /*toast({
       title: "MOBILE PAYMENT COMING SOON",
       description: `Mobile Money payment option will be available in future updates.`,
-    });
+    });*/
       }
       else {
         setShowPaymentDialog(true);
@@ -520,6 +522,56 @@ const TaxiBooking = () => {
             </Button>
           </DialogContent>
         </Dialog>
+
+          {/* Mobile Dialog*/}
+        <Dialog open={showMobile} onOpenChange={setShowMobile}>
+          <DialogContent className="sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <CircleX className="h-6 w-6 text-red-600" />
+                Mobile Payment Coming Soon
+              </DialogTitle>
+              <DialogDescription>
+                Mobile Money payment option will be available in future updates.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4">
+              <div className="flex justify-center gap-6 mt-4">
+                <img
+                  src="/images/airtel.png"
+                  alt="Airtel Money"
+                  className="h-14 opacity-40 pointer-events-none"
+                  />
+                  <img
+                  src="/images/tnm.jpg"
+                  alt="TNM Mpamba"
+                  className="h-14 opacity-40  pointer-events-none"
+                  />
+                  <img 
+                  src="/images/nb.png"
+                  alt="National Bank"
+                  className="h-14 opacity-40 pointer-events-none"
+                  />
+              </div>
+              <div className="text-center text-sm text-muted-foreground">
+                <p>Please use Cash or Card payment methods for now.</p>
+                <p className="mt-2">Thank you for using FIND!</p>
+              </div>
+            </div>
+            
+            <Button 
+              onClick={() => {
+                setShowMobile(false);
+                navigate('/pages/TaxiBooking.tsx');
+              }}
+              className="w-full"
+            >
+              Back
+            </Button>
+          </DialogContent>
+        </Dialog>
+
+        
       </div>
     </AuthGuard>
   );
