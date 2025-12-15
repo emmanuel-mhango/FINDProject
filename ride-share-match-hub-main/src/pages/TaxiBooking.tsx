@@ -17,6 +17,7 @@ import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import GoogleMap from '@/components/GoogleMap';
 import AuthGuard from '@/components/AuthGuard';
+import { supabase } from '@/integrations/supabase/client';
 import { malawiLocations } from '@/data/malawi-locations';
 
 const formSchema = z.object({
@@ -104,9 +105,8 @@ const TaxiBooking = () => {
     }
 
     try {
-      // Check if user is logged in via localStorage
-      const userData = localStorage.getItem('userData');
-      if (!userData) {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
         toast({
           title: "Authentication Required",
           description: "Please sign in to book a taxi.",
@@ -115,29 +115,29 @@ const TaxiBooking = () => {
         return;
       }
 
-      // Save booking locally
+      // Save booking to database
       const bookingRef = `FIND-${Date.now()}`;
       const pickupLocationData = malawiLocations.find(l => l.value === pickupLocation);
       const destinationLocationData = malawiLocations.find(l => l.value === destinationLocation);
       
-      const newBooking = {
-        id: bookingRef,
-        user_id: JSON.parse(userData).email, // Use email as user id
-        pickup_location: pickupLocationData?.label || pickupLocation,
-        destination: destinationLocationData?.label || destinationLocation,
-        price: calculatedPrice,
-        phone: values.phone,
-        payment_method: values.paymentMethod,
-        notes: values.notes,
-        booking_reference: bookingRef,
-        created_at: new Date().toISOString(),
-        status: 'confirmed'
-      };
+      const { error } = await supabase
+        .from('taxi_bookings')
+        .insert([
+          {
+            user_id: user.id,
+            pickup_location: pickupLocationData?.label || pickupLocation,
+            destination: destinationLocationData?.label || destinationLocation,
+            price: calculatedPrice,
+            phone: values.phone,
+            payment_method: values.paymentMethod,
+            notes: values.notes,
+            booking_reference: bookingRef,
+          }
+        ]);
 
-      // Get existing bookings
-      const existingBookings = JSON.parse(localStorage.getItem('taxiBookings') || '[]');
-      existingBookings.push(newBooking);
-      localStorage.setItem('taxiBookings', JSON.stringify(existingBookings));
+      if (error) {
+        throw error;
+      }
 
       setBookingId(bookingRef);
       setShowPaymentDialog(true);

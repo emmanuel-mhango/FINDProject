@@ -7,6 +7,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Send, MessageCircle, X, Minimize2, Maximize2 } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
+import { supabase } from '@/integrations/supabase/client';
 
 interface Message {
   id: string;
@@ -55,12 +56,17 @@ const AIAssistant = () => {
     setIsLoading(true);
 
     try {
-      // Mock AI response for local functionality
-      const mockResponse = "Hello! I'm Victor, your AI assistant. I'm currently running in offline mode. How can I help you with your university life in Malawi?";
+      const { data, error } = await supabase.functions.invoke('ai-assistant', {
+        body: { message: currentMessage }
+      });
+
+      if (error) {
+        throw error;
+      }
 
       const assistantMessage: Message = {
         id: (Date.now() + 1).toString(),
-        text: mockResponse,
+        text: data.message,
         sender: 'assistant',
         timestamp: new Date()
       };
