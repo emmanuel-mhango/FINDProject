@@ -7,7 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Progress } from '@/components/ui/progress';
-import { User, UserRound, Briefcase, Home, Bell, Edit, Upload } from 'lucide-react';
+import { User, UserRound, Briefcase, Home, Bell, Edit, Upload, LogOut } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
@@ -99,6 +99,22 @@ const Profile = () => {
       description: "Your resume has been saved to your profile",
     });
   };
+
+  const handleLogout = () => {
+    // Clear user data from localStorage
+    localStorage.removeItem('userData');
+    localStorage.removeItem('userResume');
+    localStorage.removeItem('appliedJobs');
+    localStorage.removeItem('taxiBookings');
+    
+    toast({
+      title: "Logged out",
+      description: "You have been successfully logged out",
+    });
+    
+    // Navigate to home page
+    navigate('/');
+  };
   
   const calculateProfileCompletion = () => {
     if (!userData) return 0;
@@ -183,6 +199,17 @@ const Profile = () => {
                     <Bell size={18} className="mr-2" />
                     Notifications
                   </Button>
+                  
+                  <div className="pt-4 border-t">
+                    <Button 
+                      variant="destructive" 
+                      className="w-full justify-start" 
+                      onClick={handleLogout}
+                    >
+                      <LogOut size={18} className="mr-2" />
+                      Logout
+                    </Button>
+                  </div>
                 </div>
               </CardContent>
             </Card>
