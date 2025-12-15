@@ -14,6 +14,11 @@ import { CarTaxiFront, Briefcase, Home, User, Search, MessagesSquare, ShieldChec
 const Index = () => {
   const navigate = useNavigate();
   
+  // Check if user is logged in
+  const userData = localStorage.getItem('userData');
+  const user = userData ? JSON.parse(userData) : null;
+  const isLoggedIn = !!user;
+  
   return (
     <div className="min-h-screen flex flex-col">
       <Navbar />
@@ -28,17 +33,37 @@ const Index = () => {
 
             {/*Hero section content*/}
         <div className="relative z-10 container mx-auto px-4 text-center flex flex-col justify-center items-center h-full font-inter">
-          <h1 className="text-4xl md:text-6xl font-bold mb-6 animate-fade-in font-inter font-extrabold">Find Everything On a click</h1>
-          <p className="text-xl md:text-2xl mb-8 max-w-2xl mx-auto animate-fade-in font-inter ">
-            Your all-in-one solution for finding taxi, job opportunities, and compatible roommates.
-          </p>
-          <Button 
-            className="action-button text-lg px-8 py-6 hover-scale" 
-            size="lg"
-            onClick={() => navigate('/signin')}
-          >
-            Get Started
-          </Button>
+          {isLoggedIn ? (
+            <>
+              <h1 className="text-4xl md:text-6xl font-bold mb-6 animate-fade-in font-inter font-extrabold">
+                Welcome back, {user.firstName}!
+              </h1>
+              <p className="text-xl md:text-2xl mb-8 max-w-2xl mx-auto animate-fade-in font-inter">
+                Ready to find your next taxi, job opportunity, or perfect roommate?
+              </p>
+              <Button 
+                className="action-button text-lg px-8 py-6 hover-scale" 
+                size="lg"
+                onClick={() => navigate('/taxi')}
+              >
+                Get Started
+              </Button>
+            </>
+          ) : (
+            <>
+              <h1 className="text-4xl md:text-6xl font-bold mb-6 animate-fade-in font-inter font-extrabold">Find Everything On a click</h1>
+              <p className="text-xl md:text-2xl mb-8 max-w-2xl mx-auto animate-fade-in font-inter ">
+                Your all-in-one solution for finding taxi, job opportunities, and compatible roommates.
+              </p>
+              <Button 
+                className="action-button text-lg px-8 py-6 hover-scale" 
+                size="lg"
+                onClick={() => navigate('/signin')}
+              >
+                Get Started
+              </Button>
+            </>
+          )}
         </div>
       </section>
       

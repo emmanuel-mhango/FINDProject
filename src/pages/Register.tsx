@@ -79,8 +79,8 @@ const Register = () => {
       description: "Your account has been created",
     });
     
-    // Navigate to welcome page with user data
-    navigate('/welcome', { state: { firstName: data.firstName, lastName: data.lastName } });
+    // Navigate to home page with welcome
+    navigate('/');
   };
 
   return (
