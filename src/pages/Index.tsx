@@ -18,6 +18,13 @@ const Index = () => {
   const userData = localStorage.getItem('userData');
   const user = userData ? JSON.parse(userData) : null;
   const isLoggedIn = !!user;
+
+  const scrollToServices = () => {
+    const servicesSection = document.getElementById('our-services');
+    if (servicesSection) {
+      servicesSection.scrollIntoView({ behavior: 'smooth' });
+    }
+  };
   
   return (
     <div className="min-h-screen flex flex-col">
@@ -44,7 +51,7 @@ const Index = () => {
               <Button 
                 className="action-button text-lg px-8 py-6 hover-scale" 
                 size="lg"
-                onClick={() => navigate('/')}
+                onClick={scrollToServices}
               >
                 Get Started
               </Button>

@@ -4,7 +4,7 @@ import { CarTaxiFront, Briefcase, Home } from 'lucide-react';
 
 const OurServices = () => {
   return (
-    <section className="py-16 bg-white">
+    <section id="our-services" className="py-16 bg-white">
       <div className="container mx-auto px-4">
         <h2 className="text-4xl font-bold text-center text-find-red mb-12">OUR SERVICES</h2>
 
