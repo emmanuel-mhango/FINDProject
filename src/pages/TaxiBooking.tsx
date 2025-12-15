@@ -140,7 +140,19 @@ const TaxiBooking = () => {
       localStorage.setItem('taxiBookings', JSON.stringify(existingBookings));
 
       setBookingId(bookingRef);
-      setShowPaymentDialog(true);
+      
+      // If payment method is cash, skip payment dialog and go directly to receipt
+      if (values.paymentMethod === 'cash') {
+        confirmBooking();
+      } else if(values.paymentMethod === 'mobile-money') {
+        toast({
+      title: "MOBILE PAYMENT COMING SOON",
+      description: `Mobile Money payment option will be available in future updates.`,
+    });
+      }
+      else {
+        setShowPaymentDialog(true);
+      }
     } catch (error) {
       console.error('Error creating booking:', error);
       toast({
