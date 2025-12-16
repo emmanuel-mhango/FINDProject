@@ -31,10 +31,10 @@ const Index = () => {
       {/* Hero Section */}
       <section className="hero-section text-white relative h-screen bg-cover bg-center"
         style ={ {
-              backgroundImage: `url('herobg.jpg')`,
+              backgroundImage: `url('city.jpg')`,
         }}>
             {/*Dark Overlay*/}
-            <div className="absolute inset-0 bg-black opacity-70" z-0></div>
+            <div className="absolute inset-0 bg-black opacity-60" z-0></div>
 
             {/*Hero section content*/}
         <div className="relative z-10 container mx-auto px-4 text-center flex flex-col justify-center items-center h-full font-inter">

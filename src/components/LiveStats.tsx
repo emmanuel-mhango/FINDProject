@@ -136,7 +136,7 @@ const LiveStats: React.FC<StatsProps> = ({
 
   return (
     <Card className="bg-white p-6 rounded-lg shadow-sm hover:shadow-md transition-shadow">
-      <div className="flex justify-between items-center mb-4">
+      <div className="flex justify-between items-center mb-6">
         <h3 className="text-xl font-bold flex items-center">
           <span className="animate-pulse mr-2">📊</span> 
           Live Stats
@@ -145,64 +145,67 @@ const LiveStats: React.FC<StatsProps> = ({
           Live Updates
         </span>
       </div>
-      <div className="space-y-3">
-        <StatItem 
-          label="Active Drivers" 
-          value={drivers} 
-          icon={<Users size={18} className="text-blue-600" />} 
-          type="drivers" 
-        />
-        <StatItem 
-          label="Job Listings" 
-          value={jobs} 
-          icon={<Briefcase size={18} className="text-amber-600" />} 
-          type="jobs" 
-        />
-        <StatItem 
-          label="Roommate matches" 
-          value={matches} 
-          icon={<Users size={18} className="text-green-600" />} 
-          type="matches" 
-        />
-      </div>
       
-      {/* Additional interactive sections - arranged horizontally */}
-      <div className="mt-4 pt-4 border-t">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {/* Active Regions */}
-          <div>
-            <h4 className="text-sm font-medium mb-3">Active Regions</h4>
-            <div className="space-y-2">
-              {activeRegions.map((region, index) => (
-                <div key={index} className="flex justify-between text-xs">
-                  <div className="flex items-center">
-                    <MapPin size={12} className="mr-1 text-gray-500" />
-                    <span>{region.name}</span>
-                  </div>
-                  <span className="font-medium">{region.count} users</span>
-                </div>
-              ))}
-            </div>
+      {/* Horizontal arrangement of sections as separate cards */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+        {/* Current Stats Section */}
+        <div className="bg-gradient-to-r from-blue-50 to-indigo-50 p-4 rounded-lg shadow-sm border border-blue-100">
+          <h4 className="text-sm font-medium mb-3 text-blue-800">Current Statistics</h4>
+          <div className="space-y-3">
+            <StatItem 
+              label="Active Drivers" 
+              value={drivers} 
+              icon={<Users size={18} className="text-blue-600" />} 
+              type="drivers" 
+            />
+            <StatItem 
+              label="Job Listings" 
+              value={jobs} 
+              icon={<Briefcase size={18} className="text-amber-600" />} 
+              type="jobs" 
+            />
+            <StatItem 
+              label="Roommate matches" 
+              value={matches} 
+              icon={<Users size={18} className="text-green-600" />} 
+              type="matches" 
+            />
           </div>
-          
-          {/* Hot Job Sectors */}
-          <div>
-            <h4 className="text-sm font-medium mb-3">Hot Job Sectors</h4>
-            <div className="space-y-2">
-              {hotJobSectors.map((sector, index) => (
-                <div key={index} className="flex justify-between text-xs">
-                  <span>{sector.name}</span>
-                  <span className="text-green-600 flex items-center">
-                    +{sector.trend}% <TrendingUp size={12} className="ml-1" />
-                  </span>
+        </div>
+        
+        {/* Active Regions Section */}
+        <div className="bg-gradient-to-r from-green-50 to-emerald-50 p-4 rounded-lg shadow-sm border border-green-100">
+          <h4 className="text-sm font-medium mb-3 text-green-800">Active Regions</h4>
+          <div className="space-y-2">
+            {activeRegions.map((region, index) => (
+              <div key={index} className="flex justify-between text-xs">
+                <div className="flex items-center">
+                  <MapPin size={12} className="mr-1 text-gray-500" />
+                  <span>{region.name}</span>
                 </div>
-              ))}
-            </div>
+                <span className="font-medium">{region.count} users</span>
+              </div>
+            ))}
+          </div>
+        </div>
+        
+        {/* Hot Job Sectors Section */}
+        <div className="bg-gradient-to-r from-amber-50 to-orange-50 p-4 rounded-lg shadow-sm border border-amber-100">
+          <h4 className="text-sm font-medium mb-3 text-amber-800">Hot Job Sectors</h4>
+          <div className="space-y-2">
+            {hotJobSectors.map((sector, index) => (
+              <div key={index} className="flex justify-between text-xs">
+                <span>{sector.name}</span>
+                <span className="text-green-600 flex items-center">
+                  +{sector.trend}% <TrendingUp size={12} className="ml-1" />
+                </span>
+              </div>
+            ))}
           </div>
         </div>
       </div>
       
-      <div className="mt-4 pt-3 border-t text-xs text-gray-500 flex items-center justify-center">
+      <div className="mt-6 pt-3 border-t text-xs text-gray-500 flex items-center justify-center">
         <div className="flex items-center">
           <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse mr-1"></span>
           Updating in real-time

@@ -15,6 +15,10 @@ import Jobs from "./pages/Jobs";
 import Roommates from "./pages/Roommates";
 import TaxiBooking from "./pages/TaxiBooking";
 import Auth from "./pages/Auth";
+import AboutUs from "./pages/AboutUs";
+import MeetOurTeam from "./pages/MeetOurTeam";
+import FAQ from "./pages/FAQ";
+import Feedback from "./pages/Feedback";
 import AIAssistant from "./components/AIAssistant";
 import { useEffect } from "react";
 
@@ -33,7 +37,10 @@ const App = () => (
           <Route path="/taxi" element={<TaxiBooking />} />
           <Route path="/jobs" element={<Jobs />} />
           <Route path="/roommates" element={<Roommates />} />
-          <Route path="/about" element={<Index />} />
+          <Route path="/about" element={<AboutUs />} />
+          <Route path="/team" element={<MeetOurTeam />} />
+          <Route path="/faq" element={<FAQ />} />
+          <Route path="/feedback" element={<Feedback />} />
           <Route path="/contact" element={<Index />} />
           <Route path="/auth" element={<Auth />} />
           <Route path="/signin" element={<SignIn />} />
