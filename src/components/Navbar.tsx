@@ -31,6 +31,7 @@ const Navbar = () => {
         
         <nav className="hidden md:flex items-center space-x-6">
           <Link to="/" className="text-gray-700 hover:text-find-red font-medium">Home</Link>
+          <Link to="/taxi" className="text-gray-700 hover:text-find-red font-medium">Taxis</Link>
           <Link to="/jobs" className="text-gray-700 hover:text-find-red font-medium">Jobs</Link>
           <Link to="/roommates" className="text-gray-700 hover:text-find-red font-medium">Roommates</Link>
           
@@ -67,6 +68,7 @@ const Navbar = () => {
             <SheetContent side="right" className="w-[300px] sm:w-[400px]">
               <nav className="flex flex-col space-y-4">
                 <Link to="/" className="text-gray-700 hover:text-find-red font-medium py-2">Home</Link>
+                <Link to="/taxi" className="text-gray-700 hover:text-find-red font-medium py-2">Taxis</Link>
                 <Link to="/jobs" className="text-gray-700 hover:text-find-red font-medium py-2">Jobs</Link>
                 <Link to="/roommates" className="text-gray-700 hover:text-find-red font-medium py-2">Roommates</Link>
                 
