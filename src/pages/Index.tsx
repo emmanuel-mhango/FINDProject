@@ -5,8 +5,6 @@ import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import OurServices from '@/components/OurServices';
 import LiveStats from '@/components/LiveStats';
-import TaxiBookingCard from '@/components/TaxiBookingCard';
-import QuickApplyCard from '@/components/QuickApplyCard';
 import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
 import { User, Search, MessagesSquare, ShieldCheck } from 'lucide-react';
@@ -63,7 +61,7 @@ const Index = () => {
                 Your all-in-one solution for finding taxi, job opportunities, and compatible roommates.
               </p>
               <Button 
-                className="action-button text-lg font-bold px-8 py-6 hover-scale" 
+                className="action-button text-lg px-8 py-6 hover-scale" 
                 size="lg"
                 onClick={() => navigate('/signin')}
               >
@@ -80,15 +78,9 @@ const Index = () => {
       {/* Quick Actions Section */}
       <section className="py-16 bg-gray-50">
         <div className="container mx-auto px-4">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+          <div className="max-w-4xl mx-auto">
             {/* Stats Card */}
             <LiveStats />
-            
-            {/* Quick Book Card - replaced with TaxiBookingCard */}
-            <TaxiBookingCard />
-            
-            {/* Quick Apply Card - replaced with QuickApplyCard */}
-            <QuickApplyCard />
           </div>
         </div>
       </section>

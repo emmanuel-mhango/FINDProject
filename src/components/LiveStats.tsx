@@ -166,33 +166,39 @@ const LiveStats: React.FC<StatsProps> = ({
         />
       </div>
       
-      {/* Additional interactive sections */}
+      {/* Additional interactive sections - arranged horizontally */}
       <div className="mt-4 pt-4 border-t">
-        <h4 className="text-sm font-medium mb-2">Active Regions</h4>
-        <div className="space-y-2">
-          {activeRegions.map((region, index) => (
-            <div key={index} className="flex justify-between text-xs">
-              <div className="flex items-center">
-                <MapPin size={12} className="mr-1 text-gray-500" />
-                <span>{region.name}</span>
-              </div>
-              <span className="font-medium">{region.count} users</span>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {/* Active Regions */}
+          <div>
+            <h4 className="text-sm font-medium mb-3">Active Regions</h4>
+            <div className="space-y-2">
+              {activeRegions.map((region, index) => (
+                <div key={index} className="flex justify-between text-xs">
+                  <div className="flex items-center">
+                    <MapPin size={12} className="mr-1 text-gray-500" />
+                    <span>{region.name}</span>
+                  </div>
+                  <span className="font-medium">{region.count} users</span>
+                </div>
+              ))}
             </div>
-          ))}
-        </div>
-      </div>
-      
-      <div className="mt-4 pt-4 border-t">
-        <h4 className="text-sm font-medium mb-2">Hot Job Sectors</h4>
-        <div className="space-y-2">
-          {hotJobSectors.map((sector, index) => (
-            <div key={index} className="flex justify-between text-xs">
-              <span>{sector.name}</span>
-              <span className="text-green-600 flex items-center">
-                +{sector.trend}% <TrendingUp size={12} className="ml-1" />
-              </span>
+          </div>
+          
+          {/* Hot Job Sectors */}
+          <div>
+            <h4 className="text-sm font-medium mb-3">Hot Job Sectors</h4>
+            <div className="space-y-2">
+              {hotJobSectors.map((sector, index) => (
+                <div key={index} className="flex justify-between text-xs">
+                  <span>{sector.name}</span>
+                  <span className="text-green-600 flex items-center">
+                    +{sector.trend}% <TrendingUp size={12} className="ml-1" />
+                  </span>
+                </div>
+              ))}
             </div>
-          ))}
+          </div>
         </div>
       </div>
       
