@@ -16,11 +16,11 @@ const AboutUs = () => {
               backgroundImage: `url('about.jpg')`,
         }}>
             {/*Dark Overlay*/}
-            <div className="absolute inset-0 bg-black opacity-70" z-0></div>
+            <div className="absolute inset-0 bg-black opacity-60" z-0></div>
 
             {/*Hero section content*/}
         <div className="relative z-10 container mx-auto px-4 text-center flex flex-col justify-center items-center h-full font-inter">
-          <h1 className="text-4xl md:text-6xl font-bold mb-6 animate-fade-in font-inter font-extrabold">About FIND</h1>
+          <h1 className="text-4xl md:text-6xl font-bold  mb-6 animate-fade-in font-inter font-extrabold">About FIND</h1>
           <p className="text-xl md:text-2xl mb-8 max-w-2xl mx-auto animate-fade-in font-inter">
             Connecting students across Malawi with opportunities, transportation, and meaningful connections.
           </p>
