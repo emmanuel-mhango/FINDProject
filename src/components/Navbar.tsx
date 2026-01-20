@@ -31,9 +31,14 @@ const Navbar = () => {
         
         <nav className="hidden md:flex items-center space-x-6">
           <Link to="/" className="text-gray-700 hover:text-find-red font-medium">Home</Link>
+          <Link to="/homes" className="text-gray-700 hover:text-find-red font-medium">Homes</Link>
           <Link to="/taxi" className="text-gray-700 hover:text-find-red font-medium">Taxis</Link>
-          <Link to="/jobs" className="text-gray-700 hover:text-find-red font-medium">Jobs</Link>
-          <Link to="/roommates" className="text-gray-700 hover:text-find-red font-medium">Roommates</Link>
+          <Link to="/jobs" className="text-gray-700 hover:text-find-red font-medium">
+            Jobs <span className="text-xs text-gray-500">(Coming soon)</span>
+          </Link>
+          <Link to="/roommates" className="text-gray-700 hover:text-find-red font-medium">
+            Roommates <span className="text-xs text-gray-500">(Coming soon)</span>
+          </Link>
           
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
@@ -68,9 +73,14 @@ const Navbar = () => {
             <SheetContent side="right" className="w-[300px] sm:w-[400px]">
               <nav className="flex flex-col space-y-4">
                 <Link to="/" className="text-gray-700 hover:text-find-red font-medium py-2">Home</Link>
+                <Link to="/homes" className="text-gray-700 hover:text-find-red font-medium py-2">Homes</Link>
                 <Link to="/taxi" className="text-gray-700 hover:text-find-red font-medium py-2">Taxis</Link>
-                <Link to="/jobs" className="text-gray-700 hover:text-find-red font-medium py-2">Jobs</Link>
-                <Link to="/roommates" className="text-gray-700 hover:text-find-red font-medium py-2">Roommates</Link>
+                <Link to="/jobs" className="text-gray-700 hover:text-find-red font-medium py-2">
+                  Jobs <span className="text-xs text-gray-500">(Coming soon)</span>
+                </Link>
+                <Link to="/roommates" className="text-gray-700 hover:text-find-red font-medium py-2">
+                  Roommates <span className="text-xs text-gray-500">(Coming soon)</span>
+                </Link>
                 
                 <div className="border-t pt-4">
                   <p className="text-gray-500 text-sm font-medium mb-2">More</p>
