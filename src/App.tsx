@@ -4,7 +4,6 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
-import { supabase } from "./integrations/supabase/client";
 import Index from "./pages/Index";
 import SignIn from "./pages/SignIn";
 import Register from "./pages/Register";
@@ -19,8 +18,8 @@ import AboutUs from "./pages/AboutUs";
 import MeetOurTeam from "./pages/MeetOurTeam";
 import FAQ from "./pages/FAQ";
 import Feedback from "./pages/Feedback";
+import FindHomes from "./pages/FindHomes";
 import AIAssistant from "./components/AIAssistant";
-import { useEffect } from "react";
 
 const queryClient = new QueryClient();
 
@@ -34,6 +33,7 @@ const App = () => (
         <Routes>
           <Route path="/" element={<Index />} />
           <Route path="/services" element={<Index />} />  
+          <Route path="/homes" element={<FindHomes />} />
           <Route path="/taxi" element={<TaxiBooking />} />
           <Route path="/jobs" element={<Jobs />} />
           <Route path="/roommates" element={<Roommates />} />
