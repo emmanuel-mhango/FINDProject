@@ -1,0 +1,10 @@
+[33m665dd17[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mnew[m[33m, [m[1;33mtag: [m[1;33mFIND[m[33m, [m[1;31morigin/new[m[33m)[m Add mobile payment dialog and update button labels
+[33me84865d[m Add logout button to user profile sidebar
+[33mdddfbf4[m Add smooth scroll to OurServices section from hero button
+[33mbcd67cb[m Create OurServices component and refactor Index.tsx
+[33mfdf1a20[m Add personalized welcome screen for logged-in users
+[33md6ea37f[m Skip card payment dialog when cash is selected in taxi booking
+[33m7f4b749[m Make taxi booking and AI assistant work locally without Supabase
+[33m871c81e[m Revert Register.tsx to use localStorage for immediate functionality
+[33m666c8a8[m Update Register and SignIn to use Supabase auth instead of localStorage
+[33ma997404[m Initial commit
