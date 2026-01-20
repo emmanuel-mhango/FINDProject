@@ -44,7 +44,7 @@ const Index = () => {
                 Welcome back, {user.firstName}!
               </h1>
               <p className="text-xl md:text-2xl mb-8 max-w-2xl mx-auto animate-fade-in font-inter">
-                Ready to find your next taxi, job opportunity, or perfect roommate?
+                Ready to explore homes or book your next taxi ride?
               </p>
               <Button 
                 className="action-button text-lg px-8 py-6 hover-scale" 
@@ -58,7 +58,7 @@ const Index = () => {
             <>
               <h1 className="text-4xl md:text-6xl font-bold mb-6 animate-fade-in font-inter font-extrabold">Find Everything On a click</h1>
               <p className="text-xl md:text-2xl mb-8 max-w-2xl mx-auto animate-fade-in font-inter ">
-                Your all-in-one solution for finding taxi, job opportunities, and compatible roommates.
+                Your all-in-one solution for finding homes, booking taxis, and the next services coming soon.
               </p>
               <Button 
                 className="action-button text-lg px-8 py-6 hover-scale" 
