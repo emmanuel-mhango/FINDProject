@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -11,19 +11,13 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
-import { Car, MapPin, Phone, CreditCard, FileText, CheckCircle, CircleX , Users, Navigation, LocateFixed } from 'lucide-react';
+import { Car, MapPin, Phone, CreditCard, FileText, Receipt, CheckCircle, CircleX , Users } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import GoogleMap from '@/components/GoogleMap';
 import AuthGuard from '@/components/AuthGuard';
-import { supabase } from '@/integrations/supabase/client';
-
-declare global {
-  interface Window {
-    google: typeof google;
-  }
-}
+import { malawiLocations } from '@/data/malawi-locations';
 
 const formSchema = z.object({
   phone: z.string().min(1, "Phone number is required"),
@@ -33,11 +27,8 @@ const formSchema = z.object({
 });
 
 const TaxiBooking = () => {
-  const [pickupLocation, setPickupLocation] = useState<{ lat: number; lng: number; address: string } | null>(null);
-  const [destinationLocation, setDestinationLocation] = useState<{ lat: number; lng: number; address: string } | null>(null);
-  const [selectionMode, setSelectionMode] = useState<"pickup" | "destination">("destination");
-  const [distanceKm, setDistanceKm] = useState<number | null>(null);
-  const [isMapsReady, setIsMapsReady] = useState(false);
+  const [pickupLocation, setPickupLocation] = useState('');
+  const [destinationLocation, setDestinationLocation] = useState('');
   const [passengers, setPassengers] = useState('1');
   const [calculatedPrice, setCalculatedPrice] = useState<number | null>(null);
   const [showPaymentDialog, setShowPaymentDialog] = useState(false);
@@ -48,8 +39,6 @@ const TaxiBooking = () => {
   const [bookingConfirmed, setBookingConfirmed] = useState(false);
   const [bookingId, setBookingId] = useState<string>('');
   const [isCalculating, setIsCalculating] = useState(false);
-  const baseFare = 1500;
-  const perKmRate = 500;
   const { toast } = useToast();
   const navigate = useNavigate();
 
@@ -63,83 +52,46 @@ const TaxiBooking = () => {
     },
   });
 
-  const calculateDistance = useCallback(() => {
-    if (!pickupLocation || !destinationLocation) {
-      setDistanceKm(null);
-      return;
-    }
-
-    if (!window.google) {
-      toast({
-        title: "Maps not ready",
-        description: "Google Maps is still loading. Please try again in a moment.",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    const service = new window.google.maps.DistanceMatrixService();
-    service.getDistanceMatrix(
-      {
-        origins: [{ lat: pickupLocation.lat, lng: pickupLocation.lng }],
-        destinations: [{ lat: destinationLocation.lat, lng: destinationLocation.lng }],
-        travelMode: window.google.maps.TravelMode.DRIVING,
-        unitSystem: window.google.maps.UnitSystem.METRIC,
-      },
-      (response, status) => {
-        if (status !== "OK" || !response?.rows?.[0]?.elements?.[0]) {
-          setDistanceKm(null);
-          toast({
-            title: "Distance unavailable",
-            description: "We couldn't calculate the driving distance. Please try another location.",
-            variant: "destructive",
-          });
-          return;
-        }
-
-        const element = response.rows[0].elements[0];
-        if (element.status !== "OK") {
-          setDistanceKm(null);
-          toast({
-            title: "Distance unavailable",
-            description: "We couldn't calculate the driving distance for that route.",
-            variant: "destructive",
-          });
-          return;
-        }
-
-        const km = element.distance.value / 1000;
-        setDistanceKm(km);
-      }
-    );
-  }, [destinationLocation, pickupLocation, toast]);
-
   const calculatePrice = () => {
-    if (!pickupLocation || !destinationLocation || distanceKm === null) {
+    if (!pickupLocation || !destinationLocation) {
       toast({
         title: "Missing Locations",
-        description: "Please select pickup and destination points on the map first.",
+        description: "Please select both pickup and destination locations.",
         variant: "destructive",
       });
       return;
     }
 
     setIsCalculating(true);
-
+    
+    // Simulate calculation with timeout
     setTimeout(() => {
+      // Get location details
+      const pickup = malawiLocations.find(l => l.value === pickupLocation);
+      const destination = malawiLocations.find(l => l.value === destinationLocation);
+      
+      // Calculate base price based on district distance
+      let basePrice = 500; // Base fare in MWK
+      
+      // If different districts, add extra cost
+      if (pickup?.district !== destination?.district) {
+        basePrice += 1500; // Inter-district travel
+      } else {
+        basePrice += 800; // Same district travel
+      }
+      
+      // Calculate total with passenger count
       const passengerCount = parseInt(passengers);
-      const calculatedTotal = Math.round((baseFare + distanceKm * perKmRate) * passengerCount);
-
+      const calculatedTotal = basePrice * passengerCount;
+      
       setCalculatedPrice(calculatedTotal);
       setIsCalculating(false);
-
+      
       toast({
         title: "Price Calculated",
-        description: `Trip distance ${distanceKm.toFixed(1)} km for ${passengerCount} passenger${
-          passengerCount > 1 ? "s" : ""
-        }: ${calculatedTotal.toLocaleString()} MWK`,
+        description: `Trip for ${passengerCount} passenger${passengerCount > 1 ? 's' : ''}: ${calculatedTotal.toLocaleString()} MWK`,
       });
-    }, 800);
+    }, 1500);
   };
 
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
@@ -153,8 +105,9 @@ const TaxiBooking = () => {
     }
 
     try {
-      const { data: userData, error: userError } = await supabase.auth.getUser();
-      if (userError || !userData.user) {
+      // Check if user is logged in via localStorage
+      const userData = localStorage.getItem('userData');
+      if (!userData) {
         toast({
           title: "Authentication Required",
           description: "Please sign in to book a taxi.",
@@ -165,14 +118,14 @@ const TaxiBooking = () => {
 
       // Save booking locally
       const bookingRef = `FIND-${Date.now()}`;
+      const pickupLocationData = malawiLocations.find(l => l.value === pickupLocation);
+      const destinationLocationData = malawiLocations.find(l => l.value === destinationLocation);
+      
       const newBooking = {
         id: bookingRef,
-        user_id: userData.user.id,
-        pickup_location: pickupLocation.address,
-        destination: destinationLocation.address,
-        pickup_coordinates: { lat: pickupLocation.lat, lng: pickupLocation.lng },
-        destination_coordinates: { lat: destinationLocation.lat, lng: destinationLocation.lng },
-        distance_km: distanceKm,
+        user_id: JSON.parse(userData).email, // Use email as user id
+        pickup_location: pickupLocationData?.label || pickupLocation,
+        destination: destinationLocationData?.label || destinationLocation,
         price: calculatedPrice,
         phone: values.phone,
         payment_method: values.paymentMethod,
@@ -233,19 +186,13 @@ const TaxiBooking = () => {
     });
   };
 
-  useEffect(() => {
-    if (pickupLocation && destinationLocation && isMapsReady) {
-      calculateDistance();
-    }
-  }, [calculateDistance, destinationLocation, isMapsReady, pickupLocation]);
-
   // Load booking data from localStorage if available
   useEffect(() => {
     const savedBooking = localStorage.getItem('taxiBooking');
     if (savedBooking) {
       const booking = JSON.parse(savedBooking);
-      setPickupLocation(booking.pickupLocation || null);
-      setDestinationLocation(booking.destinationLocation || null);
+      setPickupLocation(booking.location || '');
+      setDestinationLocation(booking.destination || '');
       setPassengers(booking.passengers || '1');
       if (booking.price) {
         setCalculatedPrice(booking.price);
@@ -274,93 +221,37 @@ const TaxiBooking = () => {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
                     <Label htmlFor="pickup">Pickup Location</Label>
-                    <div className="flex gap-2">
-                      <Input
-                        id="pickup"
-                        value={pickupLocation?.address || ""}
-                        placeholder="Tap on the map to set pickup"
-                        readOnly
-                      />
-                      <Button
-                        type="button"
-                        variant="outline"
-                        onClick={() => {
-                          if (!navigator.geolocation) {
-                            toast({
-                              title: "Location unavailable",
-                              description: "Your browser does not support location services.",
-                              variant: "destructive",
-                            });
-                            return;
-                          }
-
-                          navigator.geolocation.getCurrentPosition(
-                            (position) => {
-                              setPickupLocation({
-                                lat: position.coords.latitude,
-                                lng: position.coords.longitude,
-                                address: "Current location",
-                              });
-                            },
-                            () => {
-                              toast({
-                                title: "Location blocked",
-                                description: "Please allow location access to use your current position.",
-                                variant: "destructive",
-                              });
-                            }
-                          );
-                        }}
-                      >
-                        <LocateFixed className="h-4 w-4 mr-2" />
-                        Use my location
-                      </Button>
-                    </div>
+                    <Select value={pickupLocation} onValueChange={setPickupLocation}>
+                      <SelectTrigger>
+                        <MapPin className="text-gray-400 mr-2" size={16} />
+                        <SelectValue placeholder="Select pickup location" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {malawiLocations.map((loc) => (
+                          <SelectItem key={loc.value} value={loc.value}>
+                            {loc.label} ({loc.district})
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                   </div>
-
+                  
                   <div>
                     <Label htmlFor="destination">Destination</Label>
-                    <Input
-                      id="destination"
-                      value={destinationLocation?.address || ""}
-                      placeholder="Tap on the map to set destination"
-                      readOnly
-                    />
+                    <Select value={destinationLocation} onValueChange={setDestinationLocation}>
+                      <SelectTrigger>
+                        <MapPin className="text-gray-400 mr-2" size={16} />
+                        <SelectValue placeholder="Select destination" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {malawiLocations.map((loc) => (
+                          <SelectItem key={loc.value} value={loc.value}>
+                            {loc.label} ({loc.district})
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                   </div>
-                </div>
-
-                <div className="flex flex-wrap gap-2 items-center">
-                  <Button
-                    type="button"
-                    variant={selectionMode === "pickup" ? "default" : "outline"}
-                    onClick={() => setSelectionMode("pickup")}
-                  >
-                    <MapPin className="h-4 w-4 mr-2" />
-                    Select pickup
-                  </Button>
-                  <Button
-                    type="button"
-                    variant={selectionMode === "destination" ? "default" : "outline"}
-                    onClick={() => setSelectionMode("destination")}
-                  >
-                    <Navigation className="h-4 w-4 mr-2" />
-                    Select destination
-                  </Button>
-                  <span className="text-sm text-gray-500">
-                    Tap on the map to set {selectionMode === "pickup" ? "pickup" : "destination"}.
-                  </span>
-                </div>
-
-                <div className="mt-4">
-                  <h3 className="text-lg font-semibold mb-4">Map View</h3>
-                  <GoogleMap
-                    pickup={pickupLocation}
-                    destination={destinationLocation}
-                    selectionMode={selectionMode}
-                    onPickupSelect={setPickupLocation}
-                    onDestinationSelect={setDestinationLocation}
-                    onMapReady={() => setIsMapsReady(true)}
-                  />
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -379,23 +270,13 @@ const TaxiBooking = () => {
                         ))}
                       </SelectContent>
                     </Select>
-                    <p className="text-xs text-gray-500 mt-2">
-                      Base fare {baseFare.toLocaleString()} MWK + {perKmRate.toLocaleString()} MWK per km.
-                    </p>
-                    {distanceKm !== null ? (
-                      <p className="text-sm text-gray-600 mt-2">
-                        Distance: {distanceKm.toFixed(1)} km
-                      </p>
-                    ) : (
-                      <p className="text-sm text-gray-500 mt-2">Select pickup and destination to calculate distance.</p>
-                    )}
                   </div>
 
                   <div className="flex items-end">
                     <Button
                       type="button"
                       onClick={calculatePrice}
-                      disabled={!pickupLocation || !destinationLocation || distanceKm === null || isCalculating}
+                      disabled={!pickupLocation || !destinationLocation || isCalculating}
                       className="flex items-center gap-2 w-full"
                     >
                       {isCalculating ? (
@@ -422,6 +303,11 @@ const TaxiBooking = () => {
                   </Card>
                 )}
 
+                {/* Google Maps Coming Soon */}
+                <div className="mt-6">
+                  <h3 className="text-lg font-semibold mb-4">Map View</h3>
+                  <GoogleMap />
+                </div>
               </div>
 
               {/* Booking Form */}
@@ -600,21 +486,15 @@ const TaxiBooking = () => {
                 <div className="flex justify-between">
                   <span className="text-sm text-muted-foreground">From:</span>
                   <span className="text-sm text-right max-w-[200px]">
-                    {pickupLocation?.address}
+                    {malawiLocations.find(l => l.value === pickupLocation)?.label || pickupLocation}
                   </span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-sm text-muted-foreground">To:</span>
                   <span className="text-sm text-right max-w-[200px]">
-                    {destinationLocation?.address}
+                    {malawiLocations.find(l => l.value === destinationLocation)?.label || destinationLocation}
                   </span>
                 </div>
-                {distanceKm !== null ? (
-                  <div className="flex justify-between">
-                    <span className="text-sm text-muted-foreground">Distance:</span>
-                    <span className="text-sm">{distanceKm.toFixed(1)} km</span>
-                  </div>
-                ) : null}
                 <div className="flex justify-between">
                   <span className="text-sm text-muted-foreground">Passengers:</span>
                   <span className="text-sm">{passengers}</span>
@@ -682,7 +562,7 @@ const TaxiBooking = () => {
             <Button 
               onClick={() => {
                 setShowMobile(false);
-                navigate('/taxi');
+                navigate('/pages/TaxiBooking.tsx');
               }}
               className="w-full"
             >
