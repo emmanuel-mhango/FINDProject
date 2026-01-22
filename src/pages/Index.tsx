@@ -160,13 +160,8 @@ const Index = () => {
           ) : (
             <>
               <h1 className="text-4xl md:text-6xl font-bold mb-6 animate-fade-in font-inter font-extrabold">Find Everything On a click</h1>
-<<<<<<< HEAD
               <p className="text-xl md:text-2xl mb-8 max-w-2xl mx-auto animate-fade-in font-inter">
-                Your all-in-one solution for finding taxi, job opportunities, and compatible roommates.
-=======
-              <p className="text-xl md:text-2xl mb-8 max-w-2xl mx-auto animate-fade-in font-inter ">
-                Your all-in-one solution for finding homes, booking taxis, and the next services coming soon.
->>>>>>> 1b3c63b92c39c8d5afacdc8bccc31dbfcc8a362e
+                Your all-in-one solution for finding homes, booking taxis, and exploring jobs and roommates.
               </p>
               <Button 
                 className="action-button text-lg px-8 py-6 hover-scale" 

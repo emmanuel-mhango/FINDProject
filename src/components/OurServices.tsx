@@ -1,10 +1,6 @@
 import React from 'react';
 import ServiceCard from '@/components/ServiceCard';
-<<<<<<< HEAD
-import { CarTaxiFront, Briefcase, Home, Users, Sparkles } from 'lucide-react';
-=======
 import { CarTaxiFront, Briefcase, Home, Users } from 'lucide-react';
->>>>>>> 1b3c63b92c39c8d5afacdc8bccc31dbfcc8a362e
 
 const OurServices = () => {
   return (
@@ -16,15 +12,7 @@ const OurServices = () => {
           <ServiceCard
             icon={<Home size={48} />}
             title="Find Homes"
-            description="Browse verified homes with detailed photos, valuation insights, and location context."
-            buttonText="Explore Homes"
-            buttonLink="/homes"
-          />
-
-          <ServiceCard
-            icon={<Home size={48} />}
-            title="Find Homes"
-            description="Browse verified listings added by administrators and contact agents quickly."
+            description="Browse verified listings with detailed photos, valuation insights, and location context."
             buttonText="Browse Homes"
             buttonLink="/homes"
             status="active"
@@ -41,45 +29,20 @@ const OurServices = () => {
 
           <ServiceCard
             icon={<Briefcase size={48} />}
-<<<<<<< HEAD
             title="Find Jobs"
             description="Discover career opportunities that match your skills and interests."
             buttonText="Search Jobs"
             buttonLink="/jobs"
             status="active"
-=======
-            title="Find My Job"
-            description="Discover career opportunities that match your qualification and aspiration."
-            buttonText="Search Jobs"
-            buttonLink="/jobs"
-            isComingSoon
->>>>>>> 1b3c63b92c39c8d5afacdc8bccc31dbfcc8a362e
           />
 
           <ServiceCard
             icon={<Users size={48} />}
-<<<<<<< HEAD
             title="Find Roommate"
             description="Connect with compatible roommates based on lifestyle and study needs."
             buttonText="Match Roommate"
             buttonLink="/roommates"
             status="inactive"
-          />
-
-          <ServiceCard
-            icon={<Sparkles size={48} />}
-            title="Find Creators"
-            description="Hire creators and talent to bring your ideas to life."
-            buttonText="Explore Creators"
-            buttonLink="/creators"
-            status="inactive"
-=======
-            title="Find My Roommate"
-            description="Connect with fellow students who share your academic interests and lifestyle"
-            buttonText="Match Roommate"
-            buttonLink="/roommates"
-            isComingSoon
->>>>>>> 1b3c63b92c39c8d5afacdc8bccc31dbfcc8a362e
           />
         </div>
       </div>
