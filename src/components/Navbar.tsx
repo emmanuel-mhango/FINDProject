@@ -31,7 +31,14 @@ const Navbar = () => {
         { path: '/admin?tab=jobs', label: 'Jobs' },
         { path: '/admin?tab=employers', label: 'Employers' },
       ]
-    : [];
+    : [
+        { path: '/', label: 'Home' },
+        { path: '/about', label: 'About' },
+        { path: '/team', label: 'Team' },
+        { path: '/faq', label: 'FAQ' },
+        { path: '/feedback', label: 'Feedback' },
+        { path: '/contact', label: 'Contact' },
+      ];
 
   return (
     <nav className="sticky top-0 z-50 bg-white shadow-md">

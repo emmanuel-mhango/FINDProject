@@ -22,7 +22,7 @@ const MeetOurTeam = () => {
       name: "Emmanuel Mhango",
       role: "CTO, Graphic Designer",
       bio: "Passionate about creating intuitive user experiences and visually appealing designs.",
-      image: "/api/placeholder/150/150",
+      image: "/Team image/1.jpeg",
       linkedin: "#",
       twitter: "#",
       github: "#",
@@ -108,7 +108,7 @@ const MeetOurTeam = () => {
               <Card key={index} className="text-center hover:shadow-lg transition-shadow">
                 <CardContent className="p-6">
                   <Avatar className="w-24 h-24 mx-auto mb-4">
-                    <AvatarImage src={member.image} alt={member.name} />
+                    <AvatarImage className="h-full w-full object-cover" src={member.image} alt={member.name} />
                     <AvatarFallback className="text-2xl">
                       {member.name.split(' ').map(n => n[0]).join('')}
                     </AvatarFallback>

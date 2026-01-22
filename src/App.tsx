@@ -20,6 +20,7 @@ import AboutUs from "./pages/AboutUs";
 import MeetOurTeam from "./pages/MeetOurTeam";
 import FAQ from "./pages/FAQ";
 import Feedback from "./pages/Feedback";
+import Contact from "./pages/Contact";
 import TaxiBooking from "./pages/TaxiBooking";
 import Jobs from "./pages/Jobs";
 import Roommates from "./pages/Roommates";
@@ -74,7 +75,7 @@ const App = () => {
             <Route path="/team" element={<MeetOurTeam />} />
             <Route path="/faq" element={<FAQ />} />
             <Route path="/feedback" element={<Feedback />} />
-            <Route path="/contact" element={<Index />} />
+            <Route path="/contact" element={<Contact />} />
 
             {/* Authentication Routes */}
             <Route path="/auth" element={<Auth />} />
