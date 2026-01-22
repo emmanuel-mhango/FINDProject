@@ -17,36 +17,36 @@ export type Database = {
       profiles: {
         Row: {
           created_at: string
+          email: string | null
+          first_name: string | null
           full_name: string | null
-          gender: string | null
           id: string
-          phone: string | null
-          program: string | null
-          university: string | null
+          last_name: string | null
           updated_at: string
           user_id: string
+          username: string | null
         }
         Insert: {
           created_at?: string
+          email?: string | null
+          first_name?: string | null
           full_name?: string | null
-          gender?: string | null
           id?: string
-          phone?: string | null
-          program?: string | null
-          university?: string | null
+          last_name?: string | null
           updated_at?: string
           user_id: string
+          username?: string | null
         }
         Update: {
           created_at?: string
+          email?: string | null
+          first_name?: string | null
           full_name?: string | null
-          gender?: string | null
           id?: string
-          phone?: string | null
-          program?: string | null
-          university?: string | null
+          last_name?: string | null
           updated_at?: string
           user_id?: string
+          username?: string | null
         }
         Relationships: []
       }

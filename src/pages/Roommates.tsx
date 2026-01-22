@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
@@ -9,9 +8,9 @@ import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Home, UserRound, School, Search, MessageCircle, Info, Phone } from 'lucide-react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { useToast } from '@/components/ui/use-toast';
 import { malawianRoommates } from '@/data/roommateData';
 import { malawianUniversities } from '@/data/universities';
+import { useToast } from '@/components/ui/use-toast';
 
 
 const Roommates = () => {
@@ -40,11 +39,7 @@ const Roommates = () => {
   // Find matching roommates
   const findRoommates = () => {
     if (!selectedSchool) {
-      toast({
-        title: "School required",
-        description: "Please select your school",
-        variant: "destructive"
-      });
+      alert("Please select your school");
       return;
     }
     

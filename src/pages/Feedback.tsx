@@ -97,7 +97,7 @@ const Feedback = () => {
       <Navbar />
 
       {/* Hero Section */}
-      <section className="hero-section text-white relative h-screen bg-cover bg-center"
+      <section className="hero-section text-white relative h-96 bg-cover bg-center"
         style ={ {
               backgroundImage: `url('herobg.jpg')`,
         }}>

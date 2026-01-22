@@ -5,13 +5,11 @@ import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
-import { useToast } from "@/hooks/use-toast";
 import { MapPin, Users } from 'lucide-react';
 import { malawiLocations } from '@/data/malawi-locations';
 
 const TaxiBookingCard = () => {
   const navigate = useNavigate();
-  const { toast } = useToast();
   const [location, setLocation] = useState('');
   const [destination, setDestination] = useState('');
   const [passengers, setPassengers] = useState('1');
@@ -21,11 +19,7 @@ const TaxiBookingCard = () => {
   // Calculate price based on inputs
   const calculatePrice = () => {
     if (!location || !destination) {
-      toast({
-        title: "Error",
-        description: "Please select both pickup location and destination",
-        variant: "destructive",
-      });
+      alert("Please select both pickup location and destination");
       return;
     }
     

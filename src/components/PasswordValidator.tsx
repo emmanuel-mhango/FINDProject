@@ -21,24 +21,26 @@ const PasswordValidator: React.FC<PasswordValidatorProps> = ({ password }) => {
     },
     {
       text: "At least one symbol",
-      valid: /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(password)
+      valid: /[^A-Za-z0-9\s]/.test(password)
     }
   ];
 
+  const failed = validations.filter((validation) => !validation.valid);
+
+  if (!password || failed.length === 0) {
+    return null;
+  }
+
   return (
     <div className="mt-2 space-y-1">
-      {validations.map((validation, index) => (
+      {failed.map((validation, index) => (
         <div
           key={index}
           className={`flex items-center text-xs ${
             validation.valid ? 'text-green-600' : 'text-muted-foreground'
           }`}
         >
-          {validation.valid ? (
-            <Check className="w-3 h-3 mr-1" />
-          ) : (
-            <X className="w-3 h-3 mr-1" />
-          )}
+          <X className="w-3 h-3 mr-1" />
           {validation.text}
         </div>
       ))}

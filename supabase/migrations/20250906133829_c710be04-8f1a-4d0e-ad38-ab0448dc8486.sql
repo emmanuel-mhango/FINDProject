@@ -1,5 +1,5 @@
 -- Create profiles table for additional user information
-CREATE TABLE public.profiles (
+CREATE TABLE IF NOT EXISTS public.profiles (
   id UUID NOT NULL DEFAULT gen_random_uuid() PRIMARY KEY,
   user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
   full_name TEXT,
@@ -15,20 +15,18 @@ CREATE TABLE public.profiles (
 ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;
 
 -- Create policies
-CREATE POLICY "Profiles are viewable by everyone" 
-ON public.profiles 
-FOR SELECT 
-USING (true);
-
-CREATE POLICY "Users can update their own profile" 
-ON public.profiles 
-FOR UPDATE 
-USING (auth.uid() = user_id);
-
-CREATE POLICY "Users can insert their own profile" 
-ON public.profiles 
-FOR INSERT 
-WITH CHECK (auth.uid() = user_id);
+DO $$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Profiles are viewable by everyone') THEN
+    CREATE POLICY "Profiles are viewable by everyone" ON public.profiles FOR SELECT USING (true);
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Users can update their own profile') THEN
+    CREATE POLICY "Users can update their own profile" ON public.profiles FOR UPDATE USING (auth.uid() = user_id);
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Users can insert their own profile') THEN
+    CREATE POLICY "Users can insert their own profile" ON public.profiles FOR INSERT WITH CHECK (auth.uid() = user_id);
+  END IF;
+END $$;
 
 -- Create function to update timestamps
 CREATE OR REPLACE FUNCTION public.update_updated_at_column()
@@ -40,13 +38,14 @@ END;
 $$ LANGUAGE plpgsql SET search_path = public;
 
 -- Create trigger for automatic timestamp updates
+DROP TRIGGER IF EXISTS update_profiles_updated_at ON public.profiles;
 CREATE TRIGGER update_profiles_updated_at
 BEFORE UPDATE ON public.profiles
 FOR EACH ROW
 EXECUTE FUNCTION public.update_updated_at_column();
 
 -- Create taxi bookings table
-CREATE TABLE public.taxi_bookings (
+CREATE TABLE IF NOT EXISTS public.taxi_bookings (
   id UUID NOT NULL DEFAULT gen_random_uuid() PRIMARY KEY,
   user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
   pickup_location TEXT NOT NULL,
@@ -70,22 +69,21 @@ CREATE TABLE public.taxi_bookings (
 ALTER TABLE public.taxi_bookings ENABLE ROW LEVEL SECURITY;
 
 -- Create policies for taxi bookings
-CREATE POLICY "Users can view their own bookings" 
-ON public.taxi_bookings 
-FOR SELECT 
-USING (auth.uid() = user_id);
-
-CREATE POLICY "Users can create their own bookings" 
-ON public.taxi_bookings 
-FOR INSERT 
-WITH CHECK (auth.uid() = user_id);
-
-CREATE POLICY "Users can update their own bookings" 
-ON public.taxi_bookings 
-FOR UPDATE 
-USING (auth.uid() = user_id);
+DO $$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Users can view their own bookings') THEN
+    CREATE POLICY "Users can view their own bookings" ON public.taxi_bookings FOR SELECT USING (auth.uid() = user_id);
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Users can create their own bookings') THEN
+    CREATE POLICY "Users can create their own bookings" ON public.taxi_bookings FOR INSERT WITH CHECK (auth.uid() = user_id);
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Users can update their own bookings') THEN
+    CREATE POLICY "Users can update their own bookings" ON public.taxi_bookings FOR UPDATE USING (auth.uid() = user_id);
+  END IF;
+END $$;
 
 -- Create trigger for taxi bookings timestamps
+DROP TRIGGER IF EXISTS update_taxi_bookings_updated_at ON public.taxi_bookings;
 CREATE TRIGGER update_taxi_bookings_updated_at
 BEFORE UPDATE ON public.taxi_bookings
 FOR EACH ROW

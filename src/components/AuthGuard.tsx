@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Link } from 'react-router-dom';
@@ -13,9 +13,28 @@ const AuthGuard: React.FC<AuthGuardProps> = ({
   children, 
   message = "Please sign in to access this feature" 
 }) => {
-  const userData = localStorage.getItem('userData');
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
   
-  if (!userData) {
+  useEffect(() => {
+    let mounted = true;
+    (async () => {
+      try {
+        const { data } = await (await import('@/integrations/supabase/client')).supabase.auth.getSession();
+        if (!mounted) return;
+        setIsAuthenticated(!!data.session);
+      } catch (e) {
+        if (!mounted) return;
+        setIsAuthenticated(false);
+      }
+    })();
+    return () => { mounted = false; };
+  }, []);
+
+  if (isAuthenticated === null) {
+    return null;
+  }
+
+  if (!isAuthenticated) {
     return (
       <div className="flex items-center justify-center min-h-[400px] p-4">
         <Card className="w-full max-w-md">

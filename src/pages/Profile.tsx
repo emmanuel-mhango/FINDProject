@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Navbar from '@/components/Navbar';
@@ -7,206 +6,232 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Progress } from '@/components/ui/progress';
-import { User, UserRound, Briefcase, Home, Bell, Edit, Upload, LogOut } from 'lucide-react';
+import { User, UserRound, Home, Bell, Edit, LogOut, Award, TrendingUp, MapPin, Calendar, Star, Clock, FileText, Briefcase, Users } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { useToast } from '@/hooks/use-toast';
+import MessageDialog from '@/components/MessageDialog';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
+import { Badge } from '@/components/ui/badge';
 import ProfileEditor from '@/components/ProfileEditor';
-import ResumeUploader from '@/components/ResumeUploader';
+import {
+  AlertDialog,
+  AlertDialogContent,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogFooter,
+  AlertDialogAction,
+  AlertDialogCancel,
+} from '@/components/ui/alert-dialog';
 
 const Profile = () => {
   const navigate = useNavigate();
-  const { toast } = useToast();
+  const [dialogOpen, setDialogOpen] = useState(false);
   const [userData, setUserData] = useState(() => {
-    // Get user data from localStorage if available
     const savedUserData = localStorage.getItem('userData');
     return savedUserData ? JSON.parse(savedUserData) : null;
   });
-  
+  const [certificateOpen, setCertificateOpen] = useState(false);
+  const [selectedCertificate, setSelectedCertificate] = useState<{ name: string; url: string } | null>(null);
+
   const [isEditing, setIsEditing] = useState(false);
-  const [resumeData, setResumeData] = useState<{fileData: string; fileName: string} | null>(() => {
-    const savedResume = localStorage.getItem('userResume');
-    return savedResume ? JSON.parse(savedResume) : null;
-  });
-  
-  const [jobApplications, setJobApplications] = useState([
-    { id: 1, title: 'Software Developer', company: 'Tech Solutions', status: 'In Review', appliedDate: '2025-05-08' },
-    { id: 2, title: 'Data Analyst', company: 'Data Insights Ltd', status: 'Interview', appliedDate: '2025-05-05' },
+  const [savedProperties, setSavedProperties] = useState([
+    { id: 1, name: 'Modern 3-Bedroom Apartment', location: 'Lilongwe', price: 'MWK 45,000,000', status: 'Available', savedDate: '2025-05-08' },
+    { id: 2, name: 'Spacious Family Home', location: 'Blantyre', price: 'MWK 65,000,000', status: 'Under Offer', savedDate: '2025-05-05' },
   ]);
-  
-  const [currentRoommate, setCurrentRoommate] = useState({
-    name: 'James Banda',
-    school: 'UNIMA',
-    program: 'Computer Science',
-    year: '3',
-    contactEmail: 'james.banda@student.unima.mw'
-  });
 
   useEffect(() => {
-    // Redirect to login if user is not logged in
     if (!userData) {
-      navigate('/signin');
-      toast({
-        title: "Not logged in",
-        description: "Please sign in to view your profile",
-        variant: "destructive",
-      });
+      setDialogOpen(true);
+      const timer = setTimeout(() => {
+        navigate('/signin');
+      }, 2000);
+      return () => clearTimeout(timer);
     }
-    
-    // Load applied jobs from localStorage
-    const appliedJobIds = JSON.parse(localStorage.getItem('appliedJobs') || '[]');
-    if (appliedJobIds.length > 0) {
-      // In a real application, we would fetch job details by IDs from a backend
-      // Here we're just simulating this with static data
-      const mockJobApplications = appliedJobIds.map((id: number) => {
-        return {
-          id,
-          title: `Job Position ${id}`,
-          company: `Company ${id}`,
-          status: Math.random() > 0.5 ? 'In Review' : 'Application Received',
-          appliedDate: new Date().toISOString().split('T')[0]
-        };
-      });
-      
-      setJobApplications(prevApps => {
-        const existingIds = new Set(prevApps.map(app => app.id));
-        const newApps = mockJobApplications.filter(app => !existingIds.has(app.id));
-        return [...prevApps, ...newApps];
-      });
+  }, [userData, navigate]);
+
+  useEffect(() => {
+    if (!userData) return;
+    const pendingRaw = localStorage.getItem('pendingProfile');
+    if (!pendingRaw) return;
+    try {
+      const pendingProfile = JSON.parse(pendingRaw);
+      if (pendingProfile?.email && pendingProfile.email !== userData.email) {
+        return;
+      }
+      const mergedUser = {
+        ...userData,
+        email: userData.email || pendingProfile.email,
+        firstName: userData.firstName || pendingProfile.first_name || pendingProfile.firstName,
+        lastName: userData.lastName || pendingProfile.last_name || pendingProfile.lastName,
+        username: userData.username || pendingProfile.username,
+      };
+      localStorage.setItem('userData', JSON.stringify(mergedUser));
+      setUserData(mergedUser);
+    } catch (err) {
+      console.error('Profile merge error:', err);
     }
-  }, [userData, navigate, toast]);
+  }, [userData]);
 
   const handleSaveProfile = (updatedData: any) => {
-    // Save updated profile to localStorage
     localStorage.setItem('userData', JSON.stringify(updatedData));
     setUserData(updatedData);
     setIsEditing(false);
   };
-  
-  const handleResumeUpload = (fileData: string, fileName: string) => {
-    if (!fileData || !fileName) {
-      setResumeData(null);
-      localStorage.removeItem('userResume');
-      return;
-    }
-    
-    const resumeInfo = { fileData, fileName };
-    localStorage.setItem('userResume', JSON.stringify(resumeInfo));
-    setResumeData(resumeInfo);
-    
-    toast({
-      title: "Resume Uploaded",
-      description: "Your resume has been saved to your profile",
-    });
-  };
 
   const handleLogout = () => {
-    // Clear user data from localStorage
     localStorage.removeItem('userData');
-    localStorage.removeItem('userResume');
-    localStorage.removeItem('appliedJobs');
-    localStorage.removeItem('taxiBookings');
-    
-    toast({
-      title: "Logged out",
-      description: "You have been successfully logged out",
-    });
-    
-    // Navigate to home page
     navigate('/');
   };
-  
+
   const calculateProfileCompletion = () => {
     if (!userData) return 0;
-    
+
     let total = 0;
     let completed = 0;
-    
-    // Basic info
-    const fields = ['firstName', 'lastName', 'email', 'phone', 'nationalId', 'bio'];
+
+    const fields = ['firstName', 'lastName', 'email', 'phone', 'bio'];
     fields.forEach(field => {
       total++;
       if (userData[field]) completed++;
     });
-    
-    // Profile picture
+
     total++;
     if (userData.profilePicture) completed++;
-    
-    // Resume
-    total++;
-    if (resumeData) completed++;
-    
+
     return Math.round((completed / total) * 100);
   };
+
+  const resumeDocument = userData?.resume_url
+    ? {
+        name: userData.resume_file_name || 'Resume',
+        type: 'Resume / CV',
+        url: userData.resume_url,
+      }
+    : null;
+
+  const certificationDocuments = Array.isArray(userData?.certifications)
+    ? userData.certifications
+    : [];
+
+  const documents = [
+    ...(resumeDocument ? [resumeDocument] : []),
+    ...certificationDocuments.map((cert: any) => ({
+      name: cert.name || 'Certification',
+      type: 'Certification',
+      url: cert.data,
+    })),
+  ];
+
+  const handleViewCertificate = (doc: { name: string; url: string }) => {
+    setSelectedCertificate(doc);
+    setCertificateOpen(true);
+  };
+
+  const ComingSoonBadge = () => (
+    <Badge className="bg-yellow-100 text-yellow-800 hover:bg-yellow-200 flex items-center gap-1 ml-2">
+      <Clock size={12} /> Coming Soon
+    </Badge>
+  );
 
   if (!userData) return null;
 
   return (
     <div className="min-h-screen flex flex-col">
       <Navbar />
+
+      {/* Hero Section */}
+      <section className="hero-section text-white relative h-96 bg-cover bg-center"
+        style={{
+          backgroundImage: `url('https://images.unsplash.com/photo-1552664730-d307ca884978?w=1200&h=400&fit=crop')`,
+        }}>
+        <div className="absolute inset-0 bg-black opacity-60"></div>
+        <div className="relative z-10 container mx-auto px-4 text-center flex flex-col justify-center items-center h-full font-inter">
+          <h1 className="text-4xl md:text-6xl font-bold mb-6 animate-fade-in font-inter font-extrabold">My Profile</h1>
+          <p className="text-xl md:text-2xl mb-8 max-w-2xl mx-auto animate-fade-in font-inter">
+            Manage your account, saved properties, and access FIND services.
+          </p>
+        </div>
+      </section>
+
       <div className="container mx-auto px-4 py-8 flex-grow">
-        <div className="flex flex-col md:flex-row gap-6">
+        <div className="flex flex-col lg:flex-row gap-8 -mt-16 relative z-20">
           {/* Sidebar */}
-          <div className="w-full md:w-1/4">
-            <Card>
+          <div className="w-full lg:w-1/3">
+            <Card className="shadow-xl border-0">
               <CardContent className="p-6">
                 <div className="flex flex-col items-center text-center mb-6">
-                  <div className="h-24 w-24 rounded-full overflow-hidden bg-gray-200 mb-4">
+                  <div className="h-32 w-32 rounded-full overflow-hidden bg-gradient-to-br from-find-red to-red-600 p-1 mb-4">
                     {userData.profilePicture ? (
-                      <Avatar className="h-24 w-24">
+                      <Avatar className="h-full w-full">
                         <AvatarImage src={userData.profilePicture} alt={userData.firstName} />
-                        <AvatarFallback>
-                          <UserRound size={48} className="text-gray-500" />
+                        <AvatarFallback className="bg-white">
+                          <UserRound size={64} className="text-find-red" />
                         </AvatarFallback>
                       </Avatar>
                     ) : (
-                      <div className="h-full w-full flex items-center justify-center">
-                        <UserRound size={48} className="text-gray-500" />
+                      <div className="h-full w-full bg-white flex items-center justify-center rounded-full">
+                        <UserRound size={64} className="text-find-red" />
                       </div>
                     )}
                   </div>
-                  <h2 className="text-xl font-bold">{userData.firstName} {userData.lastName}</h2>
-                  <p className="text-gray-500">{userData.email}</p>
-                  <p className="text-sm mt-1">ID: {userData.nationalId}</p>
-                  
+                  <h2 className="text-2xl font-bold text-gray-900">{userData.firstName} {userData.lastName}</h2>
+                  <p className="text-gray-600 mb-4">{userData.email}</p>
+
+                  {/* Profile Completion */}
+                  <div className="w-full mb-4">
+                    <div className="flex justify-between items-center mb-2">
+                      <span className="text-sm font-medium text-gray-700">Profile Completion</span>
+                      <span className="text-sm font-bold text-find-red">{calculateProfileCompletion()}%</span>
+                    </div>
+                    <Progress value={calculateProfileCompletion()} className="h-2" />
+                  </div>
+
                   {!isEditing && (
-                    <Button 
-                      variant="outline" 
-                      size="sm" 
-                      className="mt-2 flex items-center"
+                    <Button
+                      className="bg-find-red hover:bg-red-700 text-white"
+                      size="sm"
                       onClick={() => setIsEditing(true)}
                     >
-                      <Edit size={16} className="mr-1" /> Edit Profile
+                      <Edit size={16} className="mr-2" /> Edit Profile
                     </Button>
                   )}
                 </div>
-                
-                <div className="space-y-4 mt-6">
-                  <Button variant="outline" className="w-full justify-start" onClick={() => navigate('/profile')}>
-                    <User size={18} className="mr-2" />
+
+                <div className="space-y-3">
+                  <Button variant="outline" className="w-full justify-start hover:bg-gray-50" onClick={() => navigate('/profile')}>
+                    <User size={18} className="mr-3" />
                     My Profile
                   </Button>
-                  <Button variant="outline" className="w-full justify-start" onClick={() => navigate('/jobs')}>
-                    <Briefcase size={18} className="mr-2" />
-                    Job Applications
+                  <Button variant="outline" className="w-full justify-start hover:bg-gray-50" onClick={() => navigate('/homes')}>
+                    <Home size={18} className="mr-3" />
+                    FIND Homes
                   </Button>
-                  <Button variant="outline" className="w-full justify-start" onClick={() => navigate('/roommates')}>
-                    <Home size={18} className="mr-2" />
-                    Roommate
+                  <Button variant="outline" className="w-full justify-start hover:bg-gray-50 opacity-50 cursor-not-allowed" disabled>
+                    <MapPin size={18} className="mr-3" />
+                    FIND Taxi
+                    <ComingSoonBadge />
                   </Button>
-                  <Button variant="outline" className="w-full justify-start">
-                    <Bell size={18} className="mr-2" />
+                  <Button variant="outline" className="w-full justify-start hover:bg-gray-50 opacity-50 cursor-not-allowed" disabled>
+                    <Briefcase size={18} className="mr-3" />
+                    FIND Jobs
+                    <ComingSoonBadge />
+                  </Button>
+                  <Button variant="outline" className="w-full justify-start hover:bg-gray-50 opacity-50 cursor-not-allowed" disabled>
+                    <Users size={18} className="mr-3" />
+                    FIND Roommate
+                    <ComingSoonBadge />
+                  </Button>
+                  <Button variant="outline" className="w-full justify-start hover:bg-gray-50">
+                    <Bell size={18} className="mr-3" />
                     Notifications
                   </Button>
-                  
-                  <div className="pt-4 border-t">
-                    <Button 
-                      variant="destructive" 
-                      className="w-full justify-start" 
+
+                  <div className="pt-4 border-t border-gray-200">
+                    <Button
+                      variant="destructive"
+                      className="w-full justify-start"
                       onClick={handleLogout}
                     >
-                      <LogOut size={18} className="mr-2" />
+                      <LogOut size={18} className="mr-3" />
                       Logout
                     </Button>
                   </div>
@@ -214,112 +239,256 @@ const Profile = () => {
               </CardContent>
             </Card>
           </div>
-          
+
           {/* Main Content */}
-          <div className="w-full md:w-3/4">
+          <div className="w-full lg:w-2/3">
             {isEditing ? (
-              <ProfileEditor 
-                userData={userData} 
-                onSave={handleSaveProfile} 
-                onCancel={() => setIsEditing(false)} 
+              <ProfileEditor
+                userData={userData}
+                onSave={handleSaveProfile}
+                onCancel={() => setIsEditing(false)}
               />
             ) : (
               <Tabs defaultValue="overview" className="w-full">
-                <TabsList className="mb-4">
-                  <TabsTrigger value="overview">Overview</TabsTrigger>
-                  <TabsTrigger value="jobs">Job Applications</TabsTrigger>
-                  <TabsTrigger value="roommate">Roommate</TabsTrigger>
-                  <TabsTrigger value="documents">Documents</TabsTrigger>
+                <TabsList className="mb-6 bg-white shadow-sm">
+                  <TabsTrigger value="overview" className="px-6">Overview</TabsTrigger>
+                  <TabsTrigger value="homes" className="px-6">FIND Homes</TabsTrigger>
+                  <TabsTrigger value="settings" className="px-6">Settings</TabsTrigger>
                 </TabsList>
-                
-                <TabsContent value="overview" className="space-y-4">
-                  <Card>
-                    <CardHeader>
-                      <CardTitle>Profile Overview</CardTitle>
-                      <CardDescription>A summary of your activity on FIND</CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="space-y-4">
-                        <div>
-                          <div className="flex justify-between mb-1">
-                            <span className="text-sm font-medium">Profile Completion</span>
-                            <span className="text-sm font-medium">{calculateProfileCompletion()}%</span>
-                          </div>
-                          <Progress value={calculateProfileCompletion()} className="h-2" />
+
+                <TabsContent value="overview" className="space-y-6">
+                  {/* Welcome Card */}
+                  <Card className="border-0 shadow-lg">
+                    <CardContent className="p-6">
+                      <div className="flex items-center space-x-4">
+                        <div className="bg-find-red/10 p-3 rounded-full">
+                          <Star className="w-6 h-6 text-find-red" />
                         </div>
-                        
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6">
-                          <Card>
-                            <CardContent className="p-4 text-center">
-                              <p className="text-sm text-gray-500">Job Applications</p>
-                              <p className="text-2xl font-bold">{jobApplications.length}</p>
-                            </CardContent>
-                          </Card>
-                          <Card>
-                            <CardContent className="p-4 text-center">
-                              <p className="text-sm text-gray-500">Interviews</p>
-                              <p className="text-2xl font-bold">{jobApplications.filter(j => j.status === 'Interview').length}</p>
-                            </CardContent>
-                          </Card>
-                          <Card>
-                            <CardContent className="p-4 text-center">
-                              <p className="text-sm text-gray-500">Taxi Rides</p>
-                              <p className="text-2xl font-bold">5</p>
-                            </CardContent>
-                          </Card>
+                        <div>
+                          <h3 className="text-xl font-bold text-gray-900">Welcome back, {userData.firstName}!</h3>
+                          <p className="text-gray-600">Discover your perfect home on FIND Homes</p>
                         </div>
                       </div>
                     </CardContent>
                   </Card>
-                </TabsContent>
-                
-                <TabsContent value="jobs">
-                  <Card>
+
+                  {/* Stats Cards */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <Card className="border-0 shadow-lg hover:shadow-xl transition-shadow">
+                      <CardContent className="p-6 text-center">
+                        <div className="bg-blue-100 p-3 rounded-full w-fit mx-auto mb-4">
+                          <Home className="w-6 h-6 text-blue-600" />
+                        </div>
+                        <p className="text-3xl font-bold text-gray-900 mb-1">{savedProperties.length}</p>
+                        <p className="text-sm text-gray-600">Saved Properties</p>
+                        <div className="mt-2">
+                          <Badge variant="secondary" className="text-xs">
+                            {savedProperties.filter(p => p.status === 'Available').length} Available
+                          </Badge>
+                        </div>
+                      </CardContent>
+                    </Card>
+
+                    <Card className="border-0 shadow-lg hover:shadow-xl transition-shadow">
+                      <CardContent className="p-6 text-center">
+                        <div className="bg-purple-100 p-3 rounded-full w-fit mx-auto mb-4">
+                          <Award className="w-6 h-6 text-purple-600" />
+                        </div>
+                        <p className="text-3xl font-bold text-gray-900 mb-1">{calculateProfileCompletion()}%</p>
+                        <p className="text-sm text-gray-600">Profile Complete</p>
+                        <div className="mt-2">
+                          <Badge variant="secondary" className="text-xs">
+                            Complete your profile
+                          </Badge>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  </div>
+
+                  {/* Documents */}
+                  <Card className="border-0 shadow-lg">
                     <CardHeader>
-                      <CardTitle>Your Job Applications</CardTitle>
-                      <CardDescription>Track the status of your applications</CardDescription>
+                      <CardTitle className="flex items-center">
+                        <FileText className="w-5 h-5 mr-2 text-find-red" />
+                        Documents
+                      </CardTitle>
+                      <CardDescription>Resume and certifications saved on your profile</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      {documents.length > 0 ? (
+                        <div className="space-y-3">
+                          {documents.map((doc: any, index: number) => (
+                            <div
+                              key={`${doc.name}-${index}`}
+                              className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 border border-gray-200 rounded-xl p-4 bg-white"
+                            >
+                              <div className="flex items-center gap-3">
+                                <div className="h-10 w-10 rounded-lg bg-red-50 flex items-center justify-center">
+                                  <FileText className="h-5 w-5 text-find-red" />
+                                </div>
+                                <div>
+                                  <p className="font-semibold text-gray-900">{doc.name}</p>
+                                  <p className="text-xs text-gray-500">{doc.type}</p>
+                                </div>
+                              </div>
+                              <div className="flex items-center gap-2">
+                                {doc.type === 'Certification' ? (
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => handleViewCertificate({ name: doc.name, url: doc.url })}
+                                  >
+                                    View
+                                  </Button>
+                                ) : (
+                                  <Button asChild variant="outline" size="sm">
+                                    <a href={doc.url} target="_blank" rel="noreferrer">
+                                      View
+                                    </a>
+                                  </Button>
+                                )}
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <div className="text-sm text-gray-500">
+                          Upload your resume or certifications to see them here.
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
+
+                  {/* Coming Soon Services */}
+                  <Card className="border-0 shadow-lg border-l-4 border-l-yellow-400">
+                    <CardHeader>
+                      <CardTitle className="flex items-center">
+                        <Clock className="w-5 h-5 mr-2 text-yellow-500" />
+                        Upcoming Services
+                      </CardTitle>
+                      <CardDescription>More FIND services coming soon</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div className="p-4 bg-yellow-50 rounded-lg border border-yellow-200">
+                          <div className="flex items-center mb-2">
+                            <MapPin className="w-5 h-5 text-yellow-600 mr-2" />
+                            <h4 className="font-semibold text-gray-900">FIND Taxi</h4>
+                          </div>
+                          <p className="text-sm text-gray-600">Book reliable taxi services and calculate transport costs</p>
+                        </div>
+                        <div className="p-4 bg-yellow-50 rounded-lg border border-yellow-200">
+                          <div className="flex items-center mb-2">
+                            <Briefcase className="w-5 h-5 text-yellow-600 mr-2" />
+                            <h4 className="font-semibold text-gray-900">FIND Jobs</h4>
+                          </div>
+                          <p className="text-sm text-gray-600">Discover job opportunities and connect with employers</p>
+                        </div>
+                        <div className="p-4 bg-yellow-50 rounded-lg border border-yellow-200">
+                          <div className="flex items-center mb-2">
+                            <Users className="w-5 h-5 text-yellow-600 mr-2" />
+                            <h4 className="font-semibold text-gray-900">FIND Roommate</h4>
+                          </div>
+                          <p className="text-sm text-gray-600">Find compatible roommates and perfect accommodation</p>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+
+                  {/* Recent Activity */}
+                  <Card className="border-0 shadow-lg">
+                    <CardHeader>
+                      <CardTitle className="flex items-center">
+                        <TrendingUp className="w-5 h-5 mr-2 text-find-red" />
+                        Your Activity
+                      </CardTitle>
+                      <CardDescription>Your recent interactions on FIND</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="space-y-4">
+                        {savedProperties.length > 0 ? (
+                          savedProperties.slice(0, 3).map((property) => (
+                            <div key={property.id} className="flex items-center space-x-4 p-3 bg-gray-50 rounded-lg">
+                              <div className="bg-blue-100 p-2 rounded-full">
+                                <Home className="w-4 h-4 text-blue-600" />
+                              </div>
+                              <div className="flex-1">
+                                <p className="font-medium text-gray-900">{property.name}</p>
+                                <p className="text-sm text-gray-600">{property.location} - {property.price}</p>
+                              </div>
+                              <div className="text-right">
+                                <Badge variant={property.status === 'Available' ? 'default' : 'secondary'} className="text-xs">
+                                  {property.status}
+                                </Badge>
+                                <p className="text-xs text-gray-500 mt-1">{property.savedDate}</p>
+                              </div>
+                            </div>
+                          ))
+                        ) : (
+                          <div className="text-center py-8">
+                            <Home className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+                            <p className="text-gray-500 mb-4">No saved properties yet</p>
+                            <Button size="sm" onClick={() => navigate('/homes')} className="bg-find-red hover:bg-red-700">
+                              Browse Properties
+                            </Button>
+                          </div>
+                        )}
+                      </div>
+                    </CardContent>
+                  </Card>
+                </TabsContent>
+
+                <TabsContent value="homes">
+                  <Card className="border-0 shadow-lg">
+                    <CardHeader>
+                      <CardTitle className="flex items-center">
+                        <Home className="w-5 h-5 mr-2 text-find-red" />
+                        Your Saved Properties
+                      </CardTitle>
+                      <CardDescription>Properties you've saved for later viewing</CardDescription>
                     </CardHeader>
                     <CardContent>
                       <Table>
                         <TableHeader>
-                          <TableRow>
-                            <TableHead>Position</TableHead>
-                            <TableHead>Company</TableHead>
-                            <TableHead>Status</TableHead>
-                            <TableHead>Applied Date</TableHead>
-                            <TableHead>Action</TableHead>
+                          <TableRow className="border-gray-200">
+                            <TableHead className="font-semibold text-gray-900">Property Name</TableHead>
+                            <TableHead className="font-semibold text-gray-900">Location</TableHead>
+                            <TableHead className="font-semibold text-gray-900">Price</TableHead>
+                            <TableHead className="font-semibold text-gray-900">Status</TableHead>
+                            <TableHead className="font-semibold text-gray-900">Action</TableHead>
                           </TableRow>
                         </TableHeader>
                         <TableBody>
-                          {jobApplications.length > 0 ? (
-                            jobApplications.map((job) => (
-                              <TableRow key={job.id}>
-                                <TableCell className="font-medium">{job.title}</TableCell>
-                                <TableCell>{job.company}</TableCell>
+                          {savedProperties.length > 0 ? (
+                            savedProperties.map((property) => (
+                              <TableRow key={property.id} className="border-gray-100 hover:bg-gray-50">
+                                <TableCell className="font-medium text-gray-900">{property.name}</TableCell>
+                                <TableCell className="text-gray-700">{property.location}</TableCell>
+                                <TableCell className="text-gray-700 font-semibold">{property.price}</TableCell>
                                 <TableCell>
-                                  <span className={`px-2 py-1 rounded-full text-xs ${
-                                    job.status === 'In Review' ? 'bg-yellow-100 text-yellow-800' :
-                                    job.status === 'Interview' ? 'bg-green-100 text-green-800' :
-                                    'bg-gray-100 text-gray-800'
-                                  }`}>
-                                    {job.status}
-                                  </span>
+                                  <Badge
+                                    variant={property.status === 'Available' ? 'default' : 'secondary'}
+                                    className={property.status === 'Available' ? 'bg-green-100 text-green-800 hover:bg-green-200' : ''}
+                                  >
+                                    {property.status}
+                                  </Badge>
                                 </TableCell>
-                                <TableCell>{job.appliedDate}</TableCell>
                                 <TableCell>
-                                  <Button variant="outline" size="sm">View Details</Button>
+                                  <Button variant="outline" size="sm" className="hover:bg-find-red hover:text-white hover:border-find-red">
+                                    View Details
+                                  </Button>
                                 </TableCell>
                               </TableRow>
                             ))
                           ) : (
                             <TableRow>
-                              <TableCell colSpan={5} className="text-center py-4 text-gray-500">
-                                You haven't applied to any jobs yet.
-                                <div className="mt-2">
-                                  <Button size="sm" onClick={() => navigate('/jobs')}>
-                                    Browse Jobs
-                                  </Button>
-                                </div>
+                              <TableCell colSpan={5} className="text-center py-12">
+                                <Home className="w-16 h-16 text-gray-300 mx-auto mb-4" />
+                                <h3 className="text-lg font-medium text-gray-900 mb-2">No saved properties yet</h3>
+                                <p className="text-gray-500 mb-6">Start exploring properties and save your favorites</p>
+                                <Button onClick={() => navigate('/homes')} className="bg-find-red hover:bg-red-700">
+                                  Explore Properties
+                                </Button>
                               </TableCell>
                             </TableRow>
                           )}
@@ -328,78 +497,24 @@ const Profile = () => {
                     </CardContent>
                   </Card>
                 </TabsContent>
-                
-                <TabsContent value="roommate">
-                  <Card>
+
+                <TabsContent value="settings">
+                  <Card className="border-0 shadow-lg">
                     <CardHeader>
-                      <CardTitle>Current Roommate</CardTitle>
-                      <CardDescription>Information about your roommate match</CardDescription>
+                      <CardTitle>Account Settings</CardTitle>
+                      <CardDescription>Manage your account preferences</CardDescription>
                     </CardHeader>
-                    <CardContent>
-                      {currentRoommate ? (
-                        <div className="space-y-4">
-                          <div className="flex items-center space-x-4">
-                            <div className="h-16 w-16 rounded-full bg-gray-200 flex items-center justify-center">
-                              <UserRound size={32} className="text-gray-500" />
-                            </div>
-                            <div>
-                              <h3 className="text-lg font-medium">{currentRoommate.name}</h3>
-                              <p className="text-sm text-gray-500">{currentRoommate.school} • {currentRoommate.program}</p>
-                              <p className="text-sm text-gray-500">Year {currentRoommate.year}</p>
-                            </div>
-                          </div>
-                          
-                          <div className="pt-4 border-t border-gray-200">
-                            <h4 className="font-medium mb-2">Contact Information</h4>
-                            <p className="text-sm">{currentRoommate.contactEmail}</p>
-                          </div>
-                          
-                          <div className="pt-4 flex space-x-2">
-                            <Button>Message</Button>
-                            <Button variant="outline">Request Change</Button>
-                          </div>
-                        </div>
-                      ) : (
-                        <div className="text-center py-8">
-                          <p className="text-gray-500 mb-4">You don't have a roommate match yet.</p>
-                          <Button onClick={() => navigate('/roommates')}>Find Roommate</Button>
-                        </div>
-                      )}
+                    <CardContent className="space-y-4">
+                      <div className="p-4 bg-blue-50 rounded-lg border border-blue-200">
+                        <h4 className="font-semibold text-gray-900 mb-2">Email</h4>
+                        <p className="text-gray-600">{userData.email}</p>
+                      </div>
+                      <div className="p-4 bg-blue-50 rounded-lg border border-blue-200">
+                        <h4 className="font-semibold text-gray-900 mb-2">Member Since</h4>
+                        <p className="text-gray-600">{new Date().toLocaleDateString()}</p>
+                      </div>
                     </CardContent>
                   </Card>
-                </TabsContent>
-                
-                <TabsContent value="documents">
-                  <div className="space-y-6">
-                    <ResumeUploader 
-                      onFileUploaded={(fileData, fileName) => handleResumeUpload(fileData, fileName)}
-                      existingFileName={resumeData?.fileName}
-                    />
-                    
-                    {resumeData && (
-                      <Card>
-                        <CardHeader>
-                          <CardTitle className="text-lg">Your Documents</CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                          <div className="space-y-2">
-                            <div className="flex justify-between items-center p-3 bg-gray-50 rounded-md border">
-                              <div className="flex items-center">
-                                <div className="bg-blue-100 p-2 rounded mr-3">
-                                  <Upload size={18} className="text-blue-600" />
-                                </div>
-                                <div>
-                                  <p className="font-medium">{resumeData.fileName}</p>
-                                  <p className="text-xs text-gray-500">Resume/CV • {new Date().toLocaleDateString()}</p>
-                                </div>
-                              </div>
-                              <Button variant="ghost" size="sm">View</Button>
-                            </div>
-                          </div>
-                        </CardContent>
-                      </Card>
-                    )}
-                  </div>
                 </TabsContent>
               </Tabs>
             )}
@@ -407,6 +522,44 @@ const Profile = () => {
         </div>
       </div>
       <Footer />
+
+      <MessageDialog
+        open={dialogOpen}
+        onOpenChange={setDialogOpen}
+        title="Not Logged In"
+        description="Please sign in to view your profile. Redirecting to sign in page..."
+        actionLabel="OK"
+        onConfirm={() => navigate('/signin')}
+      />
+
+      <AlertDialog open={certificateOpen} onOpenChange={setCertificateOpen}>
+        <AlertDialogContent className="max-w-3xl">
+          <AlertDialogHeader>
+            <AlertDialogTitle>{selectedCertificate?.name || 'Certificate'}</AlertDialogTitle>
+          </AlertDialogHeader>
+          {selectedCertificate?.url ? (
+            <div className="mt-2">
+              <iframe
+                src={selectedCertificate.url}
+                title={selectedCertificate.name}
+                className="w-full h-[70vh] rounded-md border border-gray-200"
+              />
+            </div>
+          ) : (
+            <p className="text-sm text-gray-600">Certificate preview not available.</p>
+          )}
+          <AlertDialogFooter>
+            <AlertDialogCancel>Close</AlertDialogCancel>
+            {selectedCertificate?.url && (
+              <AlertDialogAction asChild className="bg-find-red hover:bg-red-700">
+                <a href={selectedCertificate.url} target="_blank" rel="noreferrer">
+                  Open in new tab
+                </a>
+              </AlertDialogAction>
+            )}
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };

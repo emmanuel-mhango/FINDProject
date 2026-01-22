@@ -105,22 +105,29 @@ const Auth = () => {
           variant: "destructive",
         });
       } else if (data.user) {
-        // Create profile
-        const { error: profileError } = await supabase
-          .from('profiles')
-          .insert([
-            {
-              user_id: data.user.id,
-              full_name: signUpData.fullName,
-              phone: signUpData.phone,
-              university: signUpData.university,
-              program: signUpData.program,
-              gender: signUpData.gender,
-            }
-          ]);
+        const emailLocal = signUpData.email.split('@')[0] || 'user';
+        const pendingProfile = {
+          email: signUpData.email,
+          username: emailLocal,
+          full_name: signUpData.fullName,
+        };
+        localStorage.setItem('pendingProfile', JSON.stringify(pendingProfile));
 
-        if (profileError) {
-          console.error('Profile creation error:', profileError);
+        if (data.session?.user?.id) {
+          const { error: profileError } = await supabase
+            .from('profiles')
+            .upsert([
+              {
+                user_id: data.session.user.id,
+                ...pendingProfile,
+              }
+            ], { onConflict: 'user_id' });
+
+          if (profileError) {
+            console.error('Profile creation error:', profileError);
+          } else {
+            localStorage.removeItem('pendingProfile');
+          }
         }
 
         toast({
@@ -141,7 +148,7 @@ const Auth = () => {
 
   const validatePassword = (password: string): boolean => {
     const hasUppercase = /[A-Z]/.test(password);
-    const hasSymbol = /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(password);
+    const hasSymbol = /[^A-Za-z0-9\s]/.test(password);
     const hasNumber = /\d/.test(password);
     const hasMinLength = password.length >= 8;
     

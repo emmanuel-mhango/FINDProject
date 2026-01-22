@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">FIND</string>
+    <string name="title_activity_main">FIND</string>
+    <string name="package_name">com.find.app</string>
+    <string name="custom_url_scheme">com.find.app</string>
+</resources>

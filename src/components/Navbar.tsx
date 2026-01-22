@@ -1,14 +1,17 @@
-
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
-import { Link } from 'react-router-dom';
-import { User, Menu, ChevronDown } from 'lucide-react';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
+import { User, Menu, X, LogOut } from 'lucide-react';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { isAdminLoggedIn } from '@/lib/adminAuth';
 
 const Navbar = () => {
+  const [isOpen, setIsOpen] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [userData, setUserData] = useState<any>(null);
+  const navigate = useNavigate();
+  const location = useLocation();
+  const isAdmin = isAdminLoggedIn();
   
   useEffect(() => {
     // Check if user data exists in localStorage
@@ -19,85 +22,195 @@ const Navbar = () => {
     }
   }, []);
   
+  const isActive = (path: string) => location.pathname === path;
+
+  const menuItems = isAdmin
+    ? [
+        { path: '/admin', label: 'Overview' },
+        { path: '/admin?tab=homes', label: 'Homes' },
+        { path: '/admin?tab=taxis', label: 'Taxis' },
+        { path: '/admin?tab=jobs', label: 'Jobs' },
+        { path: '/admin?tab=employers', label: 'Employers' },
+      ]
+    : [
+        { path: '/', label: 'Home' },
+        { path: '/about', label: 'About' },
+        { path: '/faq', label: 'FAQ' },
+      ];
+
   return (
-    <header className="bg-white py-4 shadow-sm sticky top-0 z-50">
-      <div className="container mx-auto flex justify-between items-center px-4 md:px-6">
-        <div className="flex items-center gap-2">
-          <div className="w-8 h-8 rounded-full bg-find-red flex items-center justify-center">
-            <div className="w-4 h-4 bg-white rounded-full"></div>
+    <nav className="sticky top-0 z-50 bg-white shadow-md">
+      <div className="container mx-auto px-4">
+        <div className="flex justify-between items-center h-20">
+          {/* Logo */}
+          <div
+            className="flex items-center gap-2 cursor-pointer hover:opacity-80 transition-opacity"
+            onClick={() => navigate('/')}
+          >
+            <div className="w-8 h-8 rounded-full bg-find-red flex items-center justify-center">
+              <div className="w-4 h-4 bg-white rounded-full"></div>
+            </div>
+            <span className="text-2xl font-bold text-find-red hidden sm:inline">FIND</span>
           </div>
-          <Link to="/" className="find-logo text-2xl font-bold tracking-tight">FIND</Link>
-        </div>
-        
-        <nav className="hidden md:flex items-center space-x-6">
-          <Link to="/" className="text-gray-700 hover:text-find-red font-medium">Home</Link>
-          <Link to="/taxi" className="text-gray-700 hover:text-find-red font-medium">Taxis</Link>
-          <Link to="/jobs" className="text-gray-700 hover:text-find-red font-medium">Jobs</Link>
-          <Link to="/roommates" className="text-gray-700 hover:text-find-red font-medium">Roommates</Link>
-          
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" className="text-gray-700 hover:text-find-red font-medium flex items-center">
-                More <ChevronDown className="ml-1 h-4 w-4" />
+
+          {/* Desktop Menu */}
+          <div className="hidden md:flex items-center gap-8">
+            {menuItems.map((item) => (
+              <button
+                key={item.path}
+                onClick={() => navigate(item.path)}
+                className={`font-medium transition-colors ${
+                  isActive(item.path)
+                    ? 'text-find-red border-b-2 border-find-red pb-1'
+                    : 'text-gray-700 hover:text-find-red'
+                }`}
+              >
+                {item.label}
+              </button>
+            ))}
+          </div>
+
+          {/* Auth Buttons */}
+          <div className="hidden md:flex items-center gap-4">
+            {isAdmin ? (
+              <Button
+                className="bg-find-red hover:bg-red-700 text-white"
+                onClick={() => navigate('/admin')}
+              >
+                Admin Dashboard
               </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-48">
-              <DropdownMenuItem asChild>
-                <Link to="/about" className="w-full">About Us</Link>
-              </DropdownMenuItem>
-              <DropdownMenuItem asChild>
-                <Link to="/team" className="w-full">Meet Our Team</Link>
-              </DropdownMenuItem>
-              <DropdownMenuItem asChild>
-                <Link to="/faq" className="w-full">FAQ</Link>
-              </DropdownMenuItem>
-              <DropdownMenuItem asChild>
-                <Link to="/feedback" className="w-full">Feedback</Link>
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        </nav>
-        
-        <div className="md:hidden">
-          <Sheet>
-            <SheetTrigger asChild>
-              <Button variant="ghost" size="icon">
-                <Menu className="h-6 w-6" />
-              </Button>
-            </SheetTrigger>
-            <SheetContent side="right" className="w-[300px] sm:w-[400px]">
-              <nav className="flex flex-col space-y-4">
-                <Link to="/" className="text-gray-700 hover:text-find-red font-medium py-2">Home</Link>
-                <Link to="/taxi" className="text-gray-700 hover:text-find-red font-medium py-2">Taxis</Link>
-                <Link to="/jobs" className="text-gray-700 hover:text-find-red font-medium py-2">Jobs</Link>
-                <Link to="/roommates" className="text-gray-700 hover:text-find-red font-medium py-2">Roommates</Link>
-                
-                <div className="border-t pt-4">
-                  <p className="text-gray-500 text-sm font-medium mb-2">More</p>
-                  <Link to="/about" className="text-gray-700 hover:text-find-red font-medium py-2 block">About Us</Link>
-                  <Link to="/team" className="text-gray-700 hover:text-find-red font-medium py-2 block">Meet Our Team</Link>
-                  <Link to="/faq" className="text-gray-700 hover:text-find-red font-medium py-2 block">FAQ</Link>
-                  <Link to="/feedback" className="text-gray-700 hover:text-find-red font-medium py-2 block">Feedback</Link>
-                </div>
-              </nav>
-            </SheetContent>
-          </Sheet>
+            ) : isLoggedIn ? (
+              <>
+                <Button
+                  variant="outline"
+                  className="flex items-center gap-2"
+                  onClick={() => navigate('/profile')}
+                >
+                  <User size={18} />
+                  Profile
+                </Button>
+                <Button
+                  className="bg-find-red hover:bg-red-700 text-white"
+                  onClick={() => {
+                    localStorage.removeItem('userData');
+                    navigate('/');
+                  }}
+                >
+                  <LogOut size={18} className="mr-2" />
+                  Logout
+                </Button>
+              </>
+            ) : (
+              <>
+                <Button
+                  variant="outline"
+                  onClick={() => navigate('/signin')}
+                >
+                  Sign In
+                </Button>
+                <Button
+                  className="bg-find-red hover:bg-red-700 text-white"
+                  onClick={() => navigate('/register')}
+                >
+                  Sign Up
+                </Button>
+              </>
+            )}
+          </div>
+
+          {/* Mobile Menu Toggle */}
+          <button
+            className="md:hidden p-2"
+            onClick={() => setIsOpen(!isOpen)}
+          >
+            {isOpen ? <X size={24} /> : <Menu size={24} />}
+          </button>
         </div>
-        
-        {isLoggedIn ? (
-          <Button variant="outline" className="border-find-red text-find-red hover:bg-find-red hover:text-white rounded-full px-6" asChild>
-            <Link to="/profile">
-              <User size={18} className="mr-2" />
-              My Profile
-            </Link>
-          </Button>
-        ) : (
-          <Button variant="outline" className="border-find-red text-find-red hover:bg-find-red hover:text-white rounded-full px-6" asChild>
-            <Link to="/auth">Sign In</Link>
-          </Button>
+
+        {/* Mobile Menu */}
+          {isOpen && (
+          <div className="md:hidden pb-6 space-y-4">
+            {menuItems.map((item) => (
+              <button
+                key={item.path}
+                onClick={() => {
+                  navigate(item.path);
+                  setIsOpen(false);
+                }}
+                className={`block w-full text-left py-2 font-medium transition-colors ${
+                  isActive(item.path)
+                    ? 'text-find-red'
+                    : 'text-gray-700 hover:text-find-red'
+                }`}
+              >
+                {item.label}
+              </button>
+            ))}
+
+            <div className="pt-4 border-t border-gray-200 space-y-2">
+              {isAdmin ? (
+                <Button
+                  className="w-full bg-find-red hover:bg-red-700 text-white justify-start"
+                  onClick={() => {
+                    navigate('/admin');
+                    setIsOpen(false);
+                  }}
+                >
+                  Admin Dashboard
+                </Button>
+              ) : isLoggedIn ? (
+                <>
+                  <Button
+                    className="w-full justify-start"
+                    variant="outline"
+                    onClick={() => {
+                      navigate('/profile');
+                      setIsOpen(false);
+                    }}
+                  >
+                    <User size={18} className="mr-2" />
+                    Profile
+                  </Button>
+                  <Button
+                    className="w-full bg-find-red hover:bg-red-700 text-white justify-start"
+                    onClick={() => {
+                      localStorage.removeItem('userData');
+                      navigate('/');
+                      setIsOpen(false);
+                    }}
+                  >
+                    <LogOut size={18} className="mr-2" />
+                    Logout
+                  </Button>
+                </>
+              ) : (
+                <>
+                  <Button
+                    className="w-full justify-start"
+                    variant="outline"
+                    onClick={() => {
+                      navigate('/signin');
+                      setIsOpen(false);
+                    }}
+                  >
+                    Sign In
+                  </Button>
+                  <Button
+                    className="w-full bg-find-red hover:bg-red-700 text-white justify-start"
+                    onClick={() => {
+                      navigate('/register');
+                      setIsOpen(false);
+                    }}
+                  >
+                    Sign Up
+                  </Button>
+                </>
+              )}
+            </div>
+          </div>
         )}
       </div>
-    </header>
+    </nav>
   );
 };
 

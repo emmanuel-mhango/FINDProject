@@ -8,58 +8,125 @@ import { Label } from '@/components/ui/label';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import { Link } from 'react-router-dom';
-import { useToast } from '@/components/ui/use-toast';
+import MessageDialog from '@/components/MessageDialog';
+import { supabase } from '@/integrations/supabase/client';
+import { Chrome } from 'lucide-react';
 
 const SignIn = () => {
   const navigate = useNavigate();
-  const { toast } = useToast();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [dialogConfig, setDialogConfig] = useState({
+    title: '',
+    description: '',
+    onConfirm: () => {}
+  });
 
   const handleSignIn = (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
-    
-    // Simulate API call with timeout
-    setTimeout(() => {
-      // Check if user exists in localStorage
-      const userData = localStorage.getItem('userData');
-      
-      if (userData) {
-        const user = JSON.parse(userData);
-        
-        if (user.email === email && user.password === password) {
-          // Successful login
-          toast({
-            title: "Welcome back",
-            description: `Signed in as ${user.firstName} ${user.lastName}`,
-          });
-          
-          // Navigate to home page with welcome
-          navigate('/');
-        } else {
-          // Failed login
-          toast({
-            title: "Login failed",
-            description: "Invalid email or password",
-            variant: "destructive",
-          });
+    (async () => {
+      try {
+        const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+        if (error) throw error;
+
+        const baseUser = data.user;
+        const pendingRaw = localStorage.getItem('pendingProfile');
+        let mergedUser: any = baseUser
+          ? {
+              ...baseUser,
+              email: baseUser.email,
+              firstName: baseUser.user_metadata?.first_name || baseUser.user_metadata?.firstName,
+              lastName: baseUser.user_metadata?.last_name || baseUser.user_metadata?.lastName,
+              username: baseUser.user_metadata?.username,
+            }
+          : {};
+
+        if (pendingRaw) {
+          try {
+            const pendingProfile = JSON.parse(pendingRaw);
+            if (pendingProfile?.email === baseUser?.email) {
+              mergedUser = {
+                ...mergedUser,
+                email: mergedUser.email || pendingProfile.email,
+                firstName: mergedUser.firstName || pendingProfile.first_name || pendingProfile.firstName,
+                lastName: mergedUser.lastName || pendingProfile.last_name || pendingProfile.lastName,
+                username: mergedUser.username || pendingProfile.username,
+              };
+            }
+          } catch (profileErr) {
+            console.error('Profile merge error:', profileErr);
+          }
         }
-      } else {
-        // No user found
-        toast({
-          title: "Account not found",
-          description: "Please register first",
-          variant: "destructive",
+
+        // Store user data in localStorage
+        localStorage.setItem('userData', JSON.stringify(mergedUser));
+        if (pendingRaw && data.user?.id && data.user?.email) {
+          try {
+            const pendingProfile = JSON.parse(pendingRaw);
+            if (pendingProfile?.email === data.user.email) {
+              const { error: profileError } = await supabase
+                .from('profiles')
+                .upsert([
+                  {
+                    user_id: data.user.id,
+                    ...pendingProfile,
+                  }
+                ], { onConflict: 'user_id' });
+
+              if (!profileError) {
+                localStorage.removeItem('pendingProfile');
+              } else {
+                console.error('Profile creation error:', profileError);
+              }
+            }
+          } catch (profileErr) {
+            console.error('Profile creation error:', profileErr);
+          }
+        }
+
+        setDialogConfig({
+          title: 'Welcome Back!',
+          description: 'You have signed in successfully. Redirecting to your profile...',
+          onConfirm: () => {
+            navigate('/profile');
+          }
         });
-        
-        // Redirect to registration
-        navigate('/register');
+        setDialogOpen(true);
+      } catch (err: any) {
+        setDialogConfig({
+          title: 'Sign In Failed',
+          description: err.message || 'Unable to sign in. Please check your credentials.',
+          onConfirm: () => {}
+        });
+        setDialogOpen(true);
+      } finally {
+        setIsLoading(false);
       }
-      
-      setIsLoading(false);
-    }, 1000);
+    })();
+  };
+
+  const handleGoogleSignIn = async () => {
+    try {
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: `${window.location.origin}/profile`,
+        },
+      });
+
+      if (error) throw error;
+    } catch (err: any) {
+      console.error('Google sign-in error:', err);
+      setDialogConfig({
+        title: 'Sign In Failed',
+        description: err.message || 'Unable to sign in with Google',
+        onConfirm: () => {}
+      });
+      setDialogOpen(true);
+    }
   };
 
   return (
@@ -75,6 +142,26 @@ const SignIn = () => {
           </CardHeader>
           <form onSubmit={handleSignIn}>
             <CardContent className="space-y-4">
+              <Button 
+                type="button"
+                onClick={handleGoogleSignIn}
+                variant="outline"
+                className="w-full flex items-center justify-center gap-2"
+                disabled={isLoading}
+              >
+                <Chrome size={18} />
+                Sign in with Google
+              </Button>
+
+              <div className="relative">
+                <div className="absolute inset-0 flex items-center">
+                  <div className="w-full border-t border-gray-200"></div>
+                </div>
+                <div className="relative flex justify-center text-sm">
+                  <span className="px-2 bg-white text-gray-500">Or continue with email</span>
+                </div>
+              </div>
+
               <div className="space-y-2">
                 <Label htmlFor="email">Email</Label>
                 <Input 
@@ -130,6 +217,15 @@ const SignIn = () => {
         </Card>
       </div>
       <Footer />
+      
+      <MessageDialog 
+        open={dialogOpen}
+        onOpenChange={setDialogOpen}
+        title={dialogConfig.title}
+        description={dialogConfig.description}
+        actionLabel="OK"
+        onConfirm={dialogConfig.onConfirm}
+      />
     </div>
   );
 };

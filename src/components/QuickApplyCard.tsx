@@ -4,7 +4,6 @@ import { useNavigate } from 'react-router-dom';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
-import { useToast } from "@/hooks/use-toast";
 import {
   Dialog,
   DialogContent,
@@ -25,7 +24,6 @@ import { Textarea } from "@/components/ui/textarea";
 
 const QuickApplyCard = () => {
   const navigate = useNavigate();
-  const { toast } = useToast();
   const [jobTitle, setJobTitle] = useState('');
   const [location, setLocation] = useState('');
   const [searching, setSearching] = useState(false);
@@ -37,11 +35,7 @@ const QuickApplyCard = () => {
 
   const handleApplyNow = () => {
     if (!jobTitle || !location) {
-      toast({
-        title: "Error",
-        description: "Please enter both job title and location",
-        variant: "destructive",
-      });
+      alert("Please enter both job title and location");
       return;
     }
     
@@ -56,11 +50,7 @@ const QuickApplyCard = () => {
   
   const handleSubmitQualifications = () => {
     if (!education || !skills) {
-      toast({
-        title: "Error",
-        description: "Please enter your education and skills",
-        variant: "destructive",
-      });
+      alert("Please enter your education and skills");
       return;
     }
     
@@ -77,12 +67,6 @@ const QuickApplyCard = () => {
       setEducation('');
       setExperience('');
       setSkills('');
-      
-      toast({
-        title: "Application Submitted!",
-        description: "Your application has been submitted successfully. We'll be in touch soon!",
-        duration: 5000,
-      });
       
       // Navigate to jobs page after successful application
       setTimeout(() => {

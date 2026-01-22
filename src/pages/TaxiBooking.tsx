@@ -6,31 +6,35 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { useToast } from '@/components/ui/use-toast';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
-import { Car, MapPin, Phone, CreditCard, FileText, Receipt, CheckCircle, CircleX , Users } from 'lucide-react';
+import { Car, MapPin, Phone, CreditCard, FileText, CheckCircle, CircleX, Users } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import GoogleMap from '@/components/GoogleMap';
 import AuthGuard from '@/components/AuthGuard';
-import { malawiLocations } from '@/data/malawi-locations';
+import { useToast } from '@/components/ui/use-toast';
 
 const formSchema = z.object({
+  driverId: z.string().min(1, "Driver is required"),
   phone: z.string().min(1, "Phone number is required"),
   paymentMethod: z.string().min(1, "Payment method is required"),
   passengers: z.string().min(1, "Number of passengers is required"),
   notes: z.string().optional(),
 });
 
+type MapLocation = { lat: number; lng: number; address: string };
+
 const TaxiBooking = () => {
-  const [pickupLocation, setPickupLocation] = useState('');
-  const [destinationLocation, setDestinationLocation] = useState('');
+  const { toast } = useToast();
+  const [pickupLocation, setPickupLocation] = useState<MapLocation | null>(null);
+  const [destinationLocation, setDestinationLocation] = useState<MapLocation | null>(null);
   const [passengers, setPassengers] = useState('1');
   const [calculatedPrice, setCalculatedPrice] = useState<number | null>(null);
+  const [distanceKm, setDistanceKm] = useState<number | null>(null);
   const [showPaymentDialog, setShowPaymentDialog] = useState(false);
   const [cardDetails, setCardDetails] = useState({ number: '', expiry: '', cvv: '', name: '' });
   const [isProcessingPayment, setIsProcessingPayment] = useState(false);
@@ -39,18 +43,28 @@ const TaxiBooking = () => {
   const [bookingConfirmed, setBookingConfirmed] = useState(false);
   const [bookingId, setBookingId] = useState<string>('');
   const [isCalculating, setIsCalculating] = useState(false);
-  const { toast } = useToast();
+  const [drivers, setDrivers] = useState<any[]>([]);
   const navigate = useNavigate();
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
+      driverId: "",
       phone: "",
       paymentMethod: "",
       passengers: "1",
       notes: "",
     },
   });
+  const activeDrivers = drivers.filter((driver) => driver.active);
+  const nearbyDrivers = pickupLocation
+    ? activeDrivers.filter((driver) => {
+        const driverLocation = String(driver.location || '').toLowerCase();
+        const pickupAddress = pickupLocation.address.toLowerCase();
+        if (!driverLocation) return true;
+        return pickupAddress.includes(driverLocation) || driverLocation.includes(pickupAddress);
+      })
+    : activeDrivers;
 
   const calculatePrice = () => {
     if (!pickupLocation || !destinationLocation) {
@@ -66,24 +80,28 @@ const TaxiBooking = () => {
     
     // Simulate calculation with timeout
     setTimeout(() => {
-      // Get location details
-      const pickup = malawiLocations.find(l => l.value === pickupLocation);
-      const destination = malawiLocations.find(l => l.value === destinationLocation);
-      
-      // Calculate base price based on district distance
-      let basePrice = 500; // Base fare in MWK
-      
-      // If different districts, add extra cost
-      if (pickup?.district !== destination?.district) {
-        basePrice += 1500; // Inter-district travel
-      } else {
-        basePrice += 800; // Same district travel
-      }
-      
-      // Calculate total with passenger count
       const passengerCount = parseInt(passengers);
-      const calculatedTotal = basePrice * passengerCount;
-      
+      const googleMaps = window.google?.maps;
+      if (!googleMaps?.geometry?.spherical) {
+        setIsCalculating(false);
+        toast({
+          title: "Map not ready",
+          description: "Map services are still loading. Please try again.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      const pickupLatLng = new googleMaps.LatLng(pickupLocation.lat, pickupLocation.lng);
+      const destinationLatLng = new googleMaps.LatLng(destinationLocation.lat, destinationLocation.lng);
+      const distanceMeters = googleMaps.geometry.spherical.computeDistanceBetween(pickupLatLng, destinationLatLng);
+      const km = Math.max(0.1, distanceMeters / 1000);
+      const baseFare = 500;
+      const perKmRate = 600;
+      const perPersonFare = baseFare + km * perKmRate;
+      const calculatedTotal = Math.round(perPersonFare * passengerCount);
+
+      setDistanceKm(Number(km.toFixed(2)));
       setCalculatedPrice(calculatedTotal);
       setIsCalculating(false);
       
@@ -118,18 +136,35 @@ const TaxiBooking = () => {
 
       // Save booking locally
       const bookingRef = `FIND-${Date.now()}`;
-      const pickupLocationData = malawiLocations.find(l => l.value === pickupLocation);
-      const destinationLocationData = malawiLocations.find(l => l.value === destinationLocation);
       
+      const selectedDriver = nearbyDrivers.find((driver) => driver.id === values.driverId);
+      if (!selectedDriver) {
+        toast({
+          title: "Driver Unavailable",
+          description: "Please select an available driver.",
+          variant: "destructive",
+        });
+        return;
+      }
+
       const newBooking = {
         id: bookingRef,
         user_id: JSON.parse(userData).email, // Use email as user id
-        pickup_location: pickupLocationData?.label || pickupLocation,
-        destination: destinationLocationData?.label || destinationLocation,
+        pickup_location: pickupLocation.address,
+        destination: destinationLocation.address,
+        pickup_coords: { lat: pickupLocation.lat, lng: pickupLocation.lng },
+        destination_coords: { lat: destinationLocation.lat, lng: destinationLocation.lng },
         price: calculatedPrice,
         phone: values.phone,
         payment_method: values.paymentMethod,
         notes: values.notes,
+        driver: {
+          id: selectedDriver.id,
+          name: selectedDriver.name,
+          phone: selectedDriver.phone,
+          vehicle: selectedDriver.vehicle,
+          plate: selectedDriver.plate,
+        },
         booking_reference: bookingRef,
         created_at: new Date().toISOString(),
         status: 'confirmed'
@@ -191,8 +226,20 @@ const TaxiBooking = () => {
     const savedBooking = localStorage.getItem('taxiBooking');
     if (savedBooking) {
       const booking = JSON.parse(savedBooking);
-      setPickupLocation(booking.location || '');
-      setDestinationLocation(booking.destination || '');
+      if (booking.pickup_coords && booking.pickup_location) {
+        setPickupLocation({
+          lat: booking.pickup_coords.lat,
+          lng: booking.pickup_coords.lng,
+          address: booking.pickup_location,
+        });
+      }
+      if (booking.destination_coords && booking.destination) {
+        setDestinationLocation({
+          lat: booking.destination_coords.lat,
+          lng: booking.destination_coords.lng,
+          address: booking.destination,
+        });
+      }
       setPassengers(booking.passengers || '1');
       if (booking.price) {
         setCalculatedPrice(booking.price);
@@ -201,193 +248,255 @@ const TaxiBooking = () => {
     }
   }, []);
 
+  useEffect(() => {
+    try {
+      const stored = localStorage.getItem('adminTaxiDrivers');
+      const parsed = stored ? JSON.parse(stored) : [];
+      setDrivers(parsed);
+    } catch {
+      setDrivers([]);
+    }
+  }, []);
+
   return (
     <AuthGuard message="Please sign in to book a taxi">
       <div className="min-h-screen bg-background">
         <Navbar />
         <div className="container mx-auto px-4 py-8">
-          <Card className="max-w-4xl mx-auto">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Car className="h-6 w-6" />
-                Book a Taxi
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              {/* Location Selection */}
-              <div className="space-y-4">
-                <h3 className="text-lg font-semibold">Trip Details</h3>
-                
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="max-w-6xl mx-auto space-y-6">
+            <div className="grid grid-cols-1 lg:grid-cols-[360px_1fr] gap-6">
+              <Card className="border-0 shadow-lg rounded-3xl overflow-hidden">
+                <CardContent className="p-6 space-y-6">
+                  <div className="flex items-center gap-3">
+                    <div className="h-12 w-12 rounded-2xl bg-find-red/10 flex items-center justify-center">
+                      <Car className="h-6 w-6 text-find-red" />
+                    </div>
+                    <div>
+                      <p className="text-xs uppercase tracking-wide text-gray-500">Find Taxi</p>
+                      <h2 className="text-2xl font-bold">Book a Ride</h2>
+                    </div>
+                  </div>
+
+                  <div className="space-y-4">
                   <div>
                     <Label htmlFor="pickup">Pickup Location</Label>
-                    <Select value={pickupLocation} onValueChange={setPickupLocation}>
-                      <SelectTrigger>
-                        <MapPin className="text-gray-400 mr-2" size={16} />
-                        <SelectValue placeholder="Select pickup location" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {malawiLocations.map((loc) => (
-                          <SelectItem key={loc.value} value={loc.value}>
-                            {loc.label} ({loc.district})
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                    <Input
+                      id="pickup"
+                      readOnly
+                      className="mt-2"
+                      value={pickupLocation?.address || 'Detecting current location...'}
+                    />
+                    <p className="text-xs text-gray-500 mt-2">Pickup is auto-detected from your device.</p>
                   </div>
-                  
+
                   <div>
                     <Label htmlFor="destination">Destination</Label>
-                    <Select value={destinationLocation} onValueChange={setDestinationLocation}>
-                      <SelectTrigger>
-                        <MapPin className="text-gray-400 mr-2" size={16} />
-                        <SelectValue placeholder="Select destination" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {malawiLocations.map((loc) => (
-                          <SelectItem key={loc.value} value={loc.value}>
-                            {loc.label} ({loc.district})
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <Label htmlFor="passengers">Number of Passengers</Label>
-                    <Select value={passengers} onValueChange={setPassengers}>
-                      <SelectTrigger>
-                        <Users className="text-gray-400 mr-2" size={16} />
-                        <SelectValue placeholder="Select passengers" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {[1, 2, 3, 4, 5, 6, 7, 8].map((num) => (
-                          <SelectItem key={num} value={num.toString()}>
-                            {num} passenger{num > 1 ? 's' : ''}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                    <Input
+                      id="destination"
+                      readOnly
+                      className="mt-2"
+                      value={destinationLocation?.address || 'Select a destination on the map'}
+                    />
+                    <p className="text-xs text-gray-500 mt-2">Tap the map or search to set destination.</p>
                   </div>
 
-                  <div className="flex items-end">
+                    <div>
+                      <Label htmlFor="passengers">Passengers</Label>
+                      <Select value={passengers} onValueChange={setPassengers}>
+                        <SelectTrigger className="mt-2">
+                          <Users className="text-gray-400 mr-2" size={16} />
+                          <SelectValue placeholder="Select passengers" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {[1, 2, 3, 4, 5, 6, 7, 8].map((num) => (
+                            <SelectItem key={num} value={num.toString()}>
+                              {num} passenger{num > 1 ? 's' : ''}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+
                     <Button
                       type="button"
                       onClick={calculatePrice}
                       disabled={!pickupLocation || !destinationLocation || isCalculating}
-                      className="flex items-center gap-2 w-full"
+                      className="w-full bg-find-red hover:bg-red-700"
                     >
                       {isCalculating ? (
                         <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
                       ) : (
-                        <CreditCard className="h-4 w-4" />
+                        'Calculate Price'
                       )}
-                      Calculate Price
                     </Button>
-                  </div>
-                </div>
-                
-                {calculatedPrice && (
-                  <Card className="p-4 bg-green-50 border-green-200">
-                    <div className="flex justify-between items-center">
-                      <div>
-                        <p className="font-semibold text-lg text-green-800">{calculatedPrice.toLocaleString()} MWK</p>
-                        <p className="text-sm text-green-600">
+
+                    {calculatedPrice && (
+                      <div className="rounded-2xl border border-green-200 bg-green-50 p-4">
+                        <p className="text-sm text-green-700">Estimated fare</p>
+                        <p className="text-2xl font-semibold text-green-800">{calculatedPrice.toLocaleString()} MWK</p>
+                        <p className="text-xs text-green-600 mt-1">
                           For {passengers} passenger{parseInt(passengers) > 1 ? 's' : ''}
                         </p>
+                        {distanceKm !== null && (
+                          <p className="text-xs text-green-600 mt-1">
+                            Distance: {distanceKm.toLocaleString()} km
+                          </p>
+                        )}
                       </div>
-                      <CheckCircle className="h-6 w-6 text-green-600" />
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+
+              <div className="space-y-6">
+                <Card className="border-0 shadow-lg rounded-3xl overflow-hidden">
+                  <CardContent className="p-0">
+                    <div className="bg-gradient-to-br from-gray-900 via-gray-900 to-gray-800 text-white px-6 py-4">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <p className="text-xs uppercase tracking-wide text-white/60">Route preview</p>
+                          <h3 className="text-lg font-semibold">Live Map</h3>
+                        </div>
+                        <div className="h-10 w-10 rounded-2xl bg-white/10 flex items-center justify-center">
+                          <MapPin className="h-5 w-5 text-white" />
+                        </div>
+                      </div>
                     </div>
+                    <div className="p-4 bg-white">
+                      <GoogleMap
+                        pickup={pickupLocation}
+                        destination={destinationLocation}
+                        onPickupSelect={setPickupLocation}
+                        onDestinationSelect={setDestinationLocation}
+                      />
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {nearbyDrivers.length === 0 && (
+                  <Card className="p-4 bg-yellow-50 border-yellow-200 rounded-2xl">
+                    <p className="text-sm text-yellow-800">
+                      No drivers are available near your pickup location yet.
+                    </p>
                   </Card>
                 )}
 
-                {/* Google Maps Coming Soon */}
-                <div className="mt-6">
-                  <h3 className="text-lg font-semibold mb-4">Map View</h3>
-                  <GoogleMap />
-                </div>
+                <Card className="border-0 shadow-lg rounded-3xl">
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <Car className="h-5 w-5 text-find-red" />
+                      Confirm Your Ride
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <Form {...form}>
+                      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+                        <FormField
+                          control={form.control}
+                          name="driverId"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel className="flex items-center gap-2">
+                                <Car className="h-4 w-4" />
+                                Select Driver
+                              </FormLabel>
+                              <Select onValueChange={field.onChange} defaultValue={field.value} disabled={nearbyDrivers.length === 0}>
+                                <FormControl>
+                                  <SelectTrigger>
+                                    <SelectValue placeholder={nearbyDrivers.length === 0 ? 'No drivers available' : 'Select a driver'} />
+                                  </SelectTrigger>
+                                </FormControl>
+                                <SelectContent>
+                                  {nearbyDrivers.map((driver) => (
+                                    <SelectItem key={driver.id} value={driver.id}>
+                                      {driver.name} - {driver.vehicle}
+                                    </SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+
+                        <FormField
+                          control={form.control}
+                          name="phone"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel className="flex items-center gap-2">
+                                <Phone className="h-4 w-4" />
+                                Phone Number
+                              </FormLabel>
+                              <FormControl>
+                                <Input placeholder="Enter your phone number" {...field} />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+
+                        <FormField
+                          control={form.control}
+                          name="paymentMethod"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel className="flex items-center gap-2">
+                                <CreditCard className="h-4 w-4" />
+                                Payment Method
+                              </FormLabel>
+                              <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                <FormControl>
+                                  <SelectTrigger>
+                                    <SelectValue placeholder="Select payment method" />
+                                  </SelectTrigger>
+                                </FormControl>
+                                <SelectContent>
+                                  <SelectItem value="cash">Cash</SelectItem>
+                                  <SelectItem value="mobile-money">Mobile Money</SelectItem>
+                                  <SelectItem value="card">Credit/Debit Card</SelectItem>
+                                </SelectContent>
+                              </Select>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+
+                        <FormField
+                          control={form.control}
+                          name="notes"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel className="flex items-center gap-2">
+                                <FileText className="h-4 w-4" />
+                                Additional Notes (Optional)
+                              </FormLabel>
+                              <FormControl>
+                                <Textarea
+                                  placeholder="Any special instructions for the driver..."
+                                  {...field}
+                                />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+
+                        <Button
+                          type="submit"
+                          className="w-full bg-find-red hover:bg-red-700 text-white"
+                          size="lg"
+                          disabled={!calculatedPrice || nearbyDrivers.length === 0}
+                        >
+                          Book Taxi
+                        </Button>
+                      </form>
+                    </Form>
+                  </CardContent>
+                </Card>
               </div>
-
-              {/* Booking Form */}
-              <Form {...form}>
-                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-                  <FormField
-                    control={form.control}
-                    name="phone"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel className="flex items-center gap-2">
-                          <Phone className="h-4 w-4" />
-                          Phone Number
-                        </FormLabel>
-                        <FormControl>
-                          <Input placeholder="Enter your phone number" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <FormField
-                    control={form.control}
-                    name="paymentMethod"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel className="flex items-center gap-2">
-                          <CreditCard className="h-4 w-4" />
-                          Payment Method
-                        </FormLabel>
-                        <Select onValueChange={field.onChange} defaultValue={field.value}>
-                          <FormControl>
-                            <SelectTrigger>
-                              <SelectValue placeholder="Select payment method" />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            <SelectItem value="cash">Cash</SelectItem>
-                            <SelectItem value="mobile-money">Mobile Money</SelectItem>
-                            <SelectItem value="card">Credit/Debit Card</SelectItem>
-                          </SelectContent>
-                        </Select>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <FormField
-                    control={form.control}
-                    name="notes"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel className="flex items-center gap-2">
-                          <FileText className="h-4 w-4" />
-                          Additional Notes (Optional)
-                        </FormLabel>
-                        <FormControl>
-                          <Textarea 
-                            placeholder="Any special instructions for the driver..." 
-                            {...field} 
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <Button 
-                    type="submit" 
-                    className="w-full" 
-                    size="lg" 
-                    disabled={!calculatedPrice}
-                  >
-                    Book Taxi
-                  </Button>
-                </form>
-              </Form>
-            </CardContent>
-          </Card>
+            </div>
+          </div>
         </div>
 
         {/* Payment Dialog */}
@@ -486,13 +595,13 @@ const TaxiBooking = () => {
                 <div className="flex justify-between">
                   <span className="text-sm text-muted-foreground">From:</span>
                   <span className="text-sm text-right max-w-[200px]">
-                    {malawiLocations.find(l => l.value === pickupLocation)?.label || pickupLocation}
+                    {pickupLocation?.address || 'Pickup'}
                   </span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-sm text-muted-foreground">To:</span>
                   <span className="text-sm text-right max-w-[200px]">
-                    {malawiLocations.find(l => l.value === destinationLocation)?.label || destinationLocation}
+                    {destinationLocation?.address || 'Destination'}
                   </span>
                 </div>
                 <div className="flex justify-between">
@@ -503,6 +612,14 @@ const TaxiBooking = () => {
                   <span>Total Amount:</span>
                   <span>{calculatedPrice} MWK</span>
                 </div>
+                {bookingId && (
+                  <div className="flex justify-between">
+                    <span className="text-sm text-muted-foreground">Driver:</span>
+                    <span className="text-sm">
+                      {activeDrivers.find((driver) => driver.id === form.getValues('driverId'))?.name || 'Assigned'}
+                    </span>
+                  </div>
+                )}
               </div>
               
               <div className="text-center text-sm text-muted-foreground">
@@ -562,7 +679,7 @@ const TaxiBooking = () => {
             <Button 
               onClick={() => {
                 setShowMobile(false);
-                navigate('/pages/TaxiBooking.tsx');
+                navigate('/');
               }}
               className="w-full"
             >

@@ -2,7 +2,6 @@
 import React, { useState, useRef } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { useToast } from '@/hooks/use-toast';
 import { Upload, FileX } from 'lucide-react';
 import { Progress } from '@/components/ui/progress';
 
@@ -15,7 +14,6 @@ const ResumeUploader: React.FC<ResumeUploaderProps> = ({
   onFileUploaded,
   existingFileName 
 }) => {
-  const { toast } = useToast();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [fileName, setFileName] = useState<string | null>(existingFileName || null);
   const [uploadProgress, setUploadProgress] = useState<number>(0);
@@ -27,22 +25,14 @@ const ResumeUploader: React.FC<ResumeUploaderProps> = ({
     
     // Check file size (max 5MB)
     if (file.size > 5 * 1024 * 1024) {
-      toast({
-        title: "File too large",
-        description: "Please select a file smaller than 5MB",
-        variant: "destructive",
-      });
+      alert("File too large. Please select a file smaller than 5MB");
       return;
     }
     
     // Check file type
     const allowedTypes = ['application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'];
     if (!allowedTypes.includes(file.type)) {
-      toast({
-        title: "Invalid file type",
-        description: "Please select a PDF or Word document",
-        variant: "destructive",
-      });
+      alert("Invalid file type. Please select a PDF or Word document");
       return;
     }
     

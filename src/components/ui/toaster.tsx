@@ -1,33 +1,30 @@
 import { useToast } from "@/hooks/use-toast"
-import {
-  Toast,
-  ToastClose,
-  ToastDescription,
-  ToastProvider,
-  ToastTitle,
-  ToastViewport,
-} from "@/components/ui/toast"
+import MessageDialog from "@/components/MessageDialog"
 
 export function Toaster() {
-  const { toasts } = useToast()
+  const { toasts, dismiss } = useToast()
+  const activeToast = toasts[0]
+
+  if (!activeToast) {
+    return null
+  }
+
+  const title =
+    typeof activeToast.title === "string"
+      ? activeToast.title
+      : "Notification"
+  const description =
+    typeof activeToast.description === "string"
+      ? activeToast.description
+      : ""
 
   return (
-    <ToastProvider>
-      {toasts.map(function ({ id, title, description, action, ...props }) {
-        return (
-          <Toast key={id} {...props}>
-            <div className="grid gap-1">
-              {title && <ToastTitle>{title}</ToastTitle>}
-              {description && (
-                <ToastDescription>{description}</ToastDescription>
-              )}
-            </div>
-            {action}
-            <ToastClose />
-          </Toast>
-        )
-      })}
-      <ToastViewport />
-    </ToastProvider>
+    <MessageDialog
+      open={activeToast.open ?? true}
+      onOpenChange={() => dismiss(activeToast.id)}
+      title={title}
+      description={description}
+      variant={activeToast.variant === "destructive" ? "destructive" : "default"}
+    />
   )
 }

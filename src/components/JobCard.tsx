@@ -3,7 +3,6 @@ import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Briefcase, Building, MapPin, Clock, Check } from 'lucide-react';
-import { useToast } from "@/hooks/use-toast";
 
 interface JobProps {
   job: {
@@ -15,13 +14,14 @@ interface JobProps {
     salary: string;
     qualifications: string[];
     description: string;
+    category?: string;
+    employer_email?: string;
   };
   onApply: () => void;
   qualifications?: string[];
 }
 
 const JobCard = ({ job, onApply, qualifications = [] }: JobProps) => {
-  const { toast } = useToast();
   const [hasApplied, setHasApplied] = useState(false);
   
   // Check if user has already applied for this job
@@ -52,11 +52,6 @@ const JobCard = ({ job, onApply, qualifications = [] }: JobProps) => {
   
   const handleApply = () => {
     if (hasApplied) {
-      toast({
-        title: "Already Applied",
-        description: "You have already applied for this position",
-        variant: "destructive",
-      });
       return;
     }
     
@@ -67,11 +62,6 @@ const JobCard = ({ job, onApply, qualifications = [] }: JobProps) => {
     
     setHasApplied(true);
     onApply();
-    
-    toast({
-      title: "Application Submitted",
-      description: "Your application has been successfully submitted",
-    });
   };
   
   return (
@@ -92,10 +82,15 @@ const JobCard = ({ job, onApply, qualifications = [] }: JobProps) => {
                 <div className="flex items-center text-gray-600 mt-1">
                   <MapPin size={14} className="mr-1" />
                   <span className="text-sm">{job.location}</span>
-                  <span className="mx-2">•</span>
+                  <span className="mx-2">-</span>
                   <Clock size={14} className="mr-1" />
                   <span className="text-sm">{job.type}</span>
                 </div>
+                {job.category && (
+                  <div className="mt-2 inline-flex items-center text-xs font-semibold bg-red-50 text-find-red px-2 py-1 rounded-full">
+                    {job.category}
+                  </div>
+                )}
               </div>
             </div>
             
@@ -151,7 +146,7 @@ const JobCard = ({ job, onApply, qualifications = [] }: JobProps) => {
           disabled={hasApplied}
           className={hasApplied ? "bg-green-600" : ""}
         >
-          {hasApplied ? "Applied ✓" : "Apply Now"}
+          {hasApplied ? "Applied" : "Apply Now"}
         </Button>
       </CardFooter>
     </Card>
