@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
@@ -42,6 +42,24 @@ const Homes = () => {
   const [savedProperties, setSavedProperties] = useState<string[]>([]);
   const [properties, setProperties] = useState<Property[]>([]);
   const [imageUrls, setImageUrls] = useState<Record<string, string>>({});
+  const [detectedCity, setDetectedCity] = useState('');
+  const [locationStatus, setLocationStatus] = useState<'idle' | 'detecting' | 'unavailable' | 'denied' | 'unknown'>('idle');
+
+  const cityAreas: Record<string, string[]> = useMemo(() => ({
+    Mzuzu: ['Chibavi', 'Mzuzu City Centre', 'Luwinga', 'Chikanda', 'Mchengautuwa'],
+    Lilongwe: ['Area 3', 'Area 10', 'Area 12', 'Area 18', 'Area 25'],
+    Blantyre: ['Namiwawa', 'Chilomoni', 'Machinjiri', 'Kanjedza', 'Limbe'],
+    Zomba: ['Sadzi', 'Masongola', 'Chikanda', 'Mucheke', 'Zomba City Centre']
+  }), []);
+
+  const getCityFromCoords = (lat: number, lng: number) => {
+    // Approximate bounding boxes for major towns in Malawi.
+    if (lat >= -11.65 && lat <= -11.80 && lng >= 33.85 && lng <= 34.10) return 'Mzuzu';
+    if (lat >= -13.85 && lat <= -14.10 && lng >= 33.65 && lng <= 33.95) return 'Lilongwe';
+    if (lat >= -15.85 && lat <= -15.60 && lng >= 34.90 && lng <= 35.10) return 'Blantyre';
+    if (lat >= -16.00 && lat <= -15.30 && lng >= 35.20 && lng <= 35.45) return 'Zomba';
+    return '';
+  };
 
   useEffect(() => {
     (async () => {
@@ -63,6 +81,31 @@ const Homes = () => {
       }
     })();
   }, []);
+
+  useEffect(() => {
+    if (!navigator.geolocation) {
+      setLocationStatus('unavailable');
+      return;
+    }
+    setLocationStatus('detecting');
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        const city = getCityFromCoords(position.coords.latitude, position.coords.longitude);
+        if (city) {
+          setDetectedCity(city);
+          setLocationStatus('idle');
+        } else {
+          setLocationStatus('unknown');
+        }
+      },
+      () => setLocationStatus('denied'),
+      { enableHighAccuracy: false, timeout: 8000, maximumAge: 300000 }
+    );
+  }, []);
+
+  const cityListings = detectedCity
+    ? properties.filter((property) => property.location.toLowerCase().includes(detectedCity.toLowerCase()))
+    : [];
 
   const filteredProperties = properties.filter(property => {
     const matchesSearch = property.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -263,6 +306,87 @@ const Homes = () => {
               </Button>
             </div>
           </div>
+        </div>
+      </section>
+
+      {/* Location Suggestions */}
+      <section className="bg-white py-10">
+        <div className="container mx-auto px-4">
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
+            <div>
+              <h2 className="text-2xl font-bold text-gray-900">Suggested locations</h2>
+              <p className="text-gray-600">
+                {detectedCity
+                  ? `Based on your location, here are places to move in ${detectedCity}.`
+                  : 'Choose your city to see suggested places to move.'}
+              </p>
+              {locationStatus === 'detecting' && (
+                <p className="text-sm text-gray-500 mt-1">Detecting your location...</p>
+              )}
+              {locationStatus === 'denied' && (
+                <p className="text-sm text-gray-500 mt-1">Location access denied. Please select your city.</p>
+              )}
+              {locationStatus === 'unavailable' && (
+                <p className="text-sm text-gray-500 mt-1">Location is unavailable in this browser.</p>
+              )}
+              {locationStatus === 'unknown' && (
+                <p className="text-sm text-gray-500 mt-1">We could not detect your town. Please select it.</p>
+              )}
+            </div>
+            <div className="w-full md:w-64">
+              <Select value={detectedCity} onValueChange={setDetectedCity}>
+                <SelectTrigger className="h-10">
+                  <SelectValue placeholder="Select your city" />
+                </SelectTrigger>
+                <SelectContent>
+                  {Object.keys(cityAreas).map((city) => (
+                    <SelectItem key={city} value={city}>{city}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+
+          {detectedCity && (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {cityAreas[detectedCity]?.map((area) => (
+                <Card key={area} className="border hover:shadow-md transition-shadow">
+                  <CardContent className="p-4">
+                    <div className="flex items-center gap-2 mb-2">
+                      <MapPin size={16} className="text-find-red" />
+                      <h3 className="text-lg font-semibold">{area}</h3>
+                    </div>
+                    <p className="text-sm text-gray-600">
+                      Explore homes in {area}, {detectedCity}.
+                    </p>
+                    <Button
+                      variant="outline"
+                      className="mt-4"
+                      onClick={() => setSearchTerm(`${area} ${detectedCity}`)}
+                    >
+                      View homes
+                    </Button>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          )}
+
+          {detectedCity && cityListings.length > 0 && (
+            <div className="mt-10">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-xl font-bold text-gray-900">Available in {detectedCity}</h3>
+                <Button variant="ghost" onClick={() => setSearchTerm(detectedCity)}>
+                  Filter by {detectedCity}
+                </Button>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {cityListings.slice(0, 3).map((property) => (
+                  <PropertyCard key={property.id} property={property} />
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       </section>
 

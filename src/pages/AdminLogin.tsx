@@ -9,6 +9,8 @@ import { Label } from '@/components/ui/label';
 import { useToast } from '@/components/ui/use-toast';
 import {
   getAdminIdentity,
+  getAdminIdentities,
+  hasAdminIdentity,
   isAdminLoggedIn,
   isInitialAdminPassword,
   needsPasswordReset,
@@ -48,7 +50,7 @@ const AdminLogin = () => {
     e.preventDefault();
     setError('');
 
-    if (!username && !email) {
+    if (!hasAdmins) {
       setError('Admin credentials are not configured. Restart the app after setting .env.');
       return;
     }
@@ -58,11 +60,11 @@ const AdminLogin = () => {
       return;
     }
 
-    if (needsPasswordReset(password)) {
+    if (needsPasswordReset(identifier, password)) {
       setShowReset(true);
       toast({
         title: 'Password Reset Required',
-        description: isInitialAdminPassword(password)
+        description: isInitialAdminPassword(identifier, password)
           ? 'Please set a new password to activate admin access.'
           : 'Your password expired. Please set a new password.',
         variant: 'destructive',
@@ -89,7 +91,7 @@ const AdminLogin = () => {
       return;
     }
 
-    setNewAdminPassword(newPassword);
+    setNewAdminPassword(identifier, newPassword);
     setAdminSession();
     toast({
       title: 'Password Updated',
@@ -99,6 +101,8 @@ const AdminLogin = () => {
   };
 
   const { username, email } = getAdminIdentity();
+  const identities = getAdminIdentities();
+  const hasAdmins = hasAdminIdentity();
 
   return (
     <div className="min-h-screen flex flex-col bg-gray-50">
@@ -120,7 +124,7 @@ const AdminLogin = () => {
                     id="identifier"
                     value={identifier}
                     onChange={(e) => setIdentifier(e.target.value)}
-                    placeholder={username || email || 'admin'}
+                    placeholder={identities.map((item) => item.username || item.email).filter(Boolean).join(' / ') || username || email || 'admin'}
                     required
                   />
                 </div>

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -14,7 +14,6 @@ import { Car, MapPin, Phone, CreditCard, FileText, CheckCircle, CircleX, Users }
 import { useNavigate } from 'react-router-dom';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
-import GoogleMap from '@/components/GoogleMap';
 import AuthGuard from '@/components/AuthGuard';
 import { useToast } from '@/components/ui/use-toast';
 
@@ -44,7 +43,26 @@ const TaxiBooking = () => {
   const [bookingId, setBookingId] = useState<string>('');
   const [isCalculating, setIsCalculating] = useState(false);
   const [drivers, setDrivers] = useState<any[]>([]);
+  const [detectedCity, setDetectedCity] = useState('');
+  const [locationStatus, setLocationStatus] = useState<'idle' | 'detecting' | 'unavailable' | 'denied' | 'unknown'>('idle');
+  const [pickupArea, setPickupArea] = useState('');
+  const [destinationArea, setDestinationArea] = useState('');
   const navigate = useNavigate();
+
+  const cityAreas: Record<string, string[]> = useMemo(() => ({
+    Mzuzu: ['Chibavi', 'Mzuzu City Centre', 'Luwinga', 'Chikanda', 'Mchengautuwa'],
+    Lilongwe: ['Area 3', 'Area 10', 'Area 12', 'Area 18', 'Area 25'],
+    Blantyre: ['Namiwawa', 'Chilomoni', 'Machinjiri', 'Kanjedza', 'Limbe'],
+    Zomba: ['Sadzi', 'Masongola', 'Chikanda', 'Mucheke', 'Zomba City Centre']
+  }), []);
+
+  const getCityFromCoords = (lat: number, lng: number) => {
+    if (lat >= -11.65 && lat <= -11.80 && lng >= 33.85 && lng <= 34.10) return 'Mzuzu';
+    if (lat >= -13.85 && lat <= -14.10 && lng >= 33.65 && lng <= 33.95) return 'Lilongwe';
+    if (lat >= -15.85 && lat <= -15.60 && lng >= 34.90 && lng <= 35.10) return 'Blantyre';
+    if (lat >= -16.00 && lat <= -15.30 && lng >= 35.20 && lng <= 35.45) return 'Zomba';
+    return '';
+  };
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -81,21 +99,8 @@ const TaxiBooking = () => {
     // Simulate calculation with timeout
     setTimeout(() => {
       const passengerCount = parseInt(passengers);
-      const googleMaps = window.google?.maps;
-      if (!googleMaps?.geometry?.spherical) {
-        setIsCalculating(false);
-        toast({
-          title: "Map not ready",
-          description: "Map services are still loading. Please try again.",
-          variant: "destructive",
-        });
-        return;
-      }
-
-      const pickupLatLng = new googleMaps.LatLng(pickupLocation.lat, pickupLocation.lng);
-      const destinationLatLng = new googleMaps.LatLng(destinationLocation.lat, destinationLocation.lng);
-      const distanceMeters = googleMaps.geometry.spherical.computeDistanceBetween(pickupLatLng, destinationLatLng);
-      const km = Math.max(0.1, distanceMeters / 1000);
+      const sameArea = pickupLocation.address === destinationLocation.address;
+      const km = sameArea ? 3 : 8;
       const baseFare = 500;
       const perKmRate = 600;
       const perPersonFare = baseFare + km * perKmRate;
@@ -249,6 +254,50 @@ const TaxiBooking = () => {
   }, []);
 
   useEffect(() => {
+    if (!navigator.geolocation) {
+      setLocationStatus('unavailable');
+      return;
+    }
+    setLocationStatus('detecting');
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        const city = getCityFromCoords(position.coords.latitude, position.coords.longitude);
+        if (city) {
+          setDetectedCity(city);
+          setLocationStatus('idle');
+        } else {
+          setLocationStatus('unknown');
+        }
+      },
+      () => setLocationStatus('denied'),
+      { enableHighAccuracy: false, timeout: 8000, maximumAge: 300000 }
+    );
+  }, []);
+
+  useEffect(() => {
+    if (!detectedCity) return;
+    const areas = cityAreas[detectedCity] || [];
+    if (!pickupArea && areas.length) {
+      setPickupArea(areas[0]);
+    }
+    if (!destinationArea && areas.length > 1) {
+      setDestinationArea(areas[1]);
+    }
+  }, [cityAreas, detectedCity, pickupArea, destinationArea]);
+
+  useEffect(() => {
+    if (detectedCity && pickupArea) {
+      setPickupLocation({ lat: 0, lng: 0, address: `${pickupArea}, ${detectedCity}` });
+    }
+  }, [detectedCity, pickupArea]);
+
+  useEffect(() => {
+    if (detectedCity && destinationArea) {
+      setDestinationLocation({ lat: 0, lng: 0, address: `${destinationArea}, ${detectedCity}` });
+    }
+  }, [detectedCity, destinationArea]);
+
+  useEffect(() => {
     try {
       const stored = localStorage.getItem('adminTaxiDrivers');
       const parsed = stored ? JSON.parse(stored) : [];
@@ -265,8 +314,8 @@ const TaxiBooking = () => {
         <div className="container mx-auto px-4 py-8">
           <div className="max-w-6xl mx-auto space-y-6">
             <div className="grid grid-cols-1 lg:grid-cols-[360px_1fr] gap-6">
-              <Card className="border-0 shadow-lg rounded-3xl overflow-hidden">
-                <CardContent className="p-6 space-y-6">
+                <Card className="border-0 shadow-lg rounded-3xl overflow-hidden">
+                  <CardContent className="p-6 space-y-6">
                   <div className="flex items-center gap-3">
                     <div className="h-12 w-12 rounded-2xl bg-find-red/10 flex items-center justify-center">
                       <Car className="h-6 w-6 text-find-red" />
@@ -279,25 +328,71 @@ const TaxiBooking = () => {
 
                   <div className="space-y-4">
                   <div>
+                    <Label htmlFor="city">Your City</Label>
+                    <Select value={detectedCity} onValueChange={setDetectedCity}>
+                      <SelectTrigger className="mt-2">
+                        <SelectValue placeholder="Select your city" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {Object.keys(cityAreas).map((city) => (
+                          <SelectItem key={city} value={city}>{city}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    {locationStatus === 'detecting' && (
+                      <p className="text-xs text-gray-500 mt-2">Detecting your location...</p>
+                    )}
+                    {locationStatus === 'denied' && (
+                      <p className="text-xs text-gray-500 mt-2">Location access denied. Please select your city.</p>
+                    )}
+                    {locationStatus === 'unavailable' && (
+                      <p className="text-xs text-gray-500 mt-2">Location is unavailable in this browser.</p>
+                    )}
+                    {locationStatus === 'unknown' && (
+                      <p className="text-xs text-gray-500 mt-2">We could not detect your town. Please select it.</p>
+                    )}
+                  </div>
+
+                  <div>
                     <Label htmlFor="pickup">Pickup Location</Label>
+                    <Select value={pickupArea} onValueChange={setPickupArea} disabled={!detectedCity}>
+                      <SelectTrigger className="mt-2">
+                        <SelectValue placeholder="Select pickup area" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {(cityAreas[detectedCity] || []).map((area) => (
+                          <SelectItem key={area} value={area}>{area}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                     <Input
                       id="pickup"
                       readOnly
                       className="mt-2"
                       value={pickupLocation?.address || 'Detecting current location...'}
                     />
-                    <p className="text-xs text-gray-500 mt-2">Pickup is auto-detected from your device.</p>
+                    <p className="text-xs text-gray-500 mt-2">Pickup is detected from your device or selected above.</p>
                   </div>
 
                   <div>
                     <Label htmlFor="destination">Destination</Label>
+                    <Select value={destinationArea} onValueChange={setDestinationArea} disabled={!detectedCity}>
+                      <SelectTrigger className="mt-2">
+                        <SelectValue placeholder="Select destination area" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {(cityAreas[detectedCity] || []).map((area) => (
+                          <SelectItem key={area} value={area}>{area}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                     <Input
                       id="destination"
                       readOnly
                       className="mt-2"
-                      value={destinationLocation?.address || 'Select a destination on the map'}
+                      value={destinationLocation?.address || 'Select a destination area'}
                     />
-                    <p className="text-xs text-gray-500 mt-2">Tap the map or search to set destination.</p>
+                    <p className="text-xs text-gray-500 mt-2">Map is disabled for now.</p>
                   </div>
 
                     <div>
@@ -362,13 +457,8 @@ const TaxiBooking = () => {
                         </div>
                       </div>
                     </div>
-                    <div className="p-4 bg-white">
-                      <GoogleMap
-                        pickup={pickupLocation}
-                        destination={destinationLocation}
-                        onPickupSelect={setPickupLocation}
-                        onDestinationSelect={setDestinationLocation}
-                      />
+                    <div className="p-6 bg-white text-center">
+                      <p className="text-sm text-gray-600">Map integration is coming soon.</p>
                     </div>
                   </CardContent>
                 </Card>
