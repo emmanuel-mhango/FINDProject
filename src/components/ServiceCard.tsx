@@ -10,7 +10,7 @@ interface ServiceCardProps {
   description: string;
   buttonText: string;
   buttonLink: string;
-  status: 'active' | 'inactive';
+  isComingSoon?: boolean;
 }
 
 const ServiceCard: React.FC<ServiceCardProps> = ({
@@ -19,7 +19,7 @@ const ServiceCard: React.FC<ServiceCardProps> = ({
   description,
   buttonText,
   buttonLink,
-  status
+  isComingSoon = false
 }) => {
   const isActive = status === 'active';
 
@@ -29,24 +29,24 @@ const ServiceCard: React.FC<ServiceCardProps> = ({
         <div className="text-find-red mb-4 text-4xl">
           {icon}
         </div>
-        <h3 className="text-xl font-bold mb-2">{title}</h3>
-        <span
-          className={`text-xs font-semibold px-2 py-1 rounded-full mb-2 ${
-            isActive ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'
-          }`}
-        >
-          {isActive ? 'Active' : 'Inactive - Coming Soon'}
-        </span>
+        <h3 className="text-xl font-bold mb-2 flex items-center gap-2">
+          {title}
+          {isComingSoon ? (
+            <span className="rounded-full bg-gray-100 px-2 py-0.5 text-xs font-semibold text-gray-600">
+              Coming soon
+            </span>
+          ) : null}
+        </h3>
         <p className="text-gray-600 text-sm">{description}</p>
       </CardContent>
       <CardFooter className="flex justify-center p-6 pt-0">
-        {isActive ? (
-          <Button className="action-button w-full" asChild>
-            <Link to={buttonLink}>{buttonText}</Link>
+        {isComingSoon ? (
+          <Button className="w-full" variant="secondary" disabled>
+            Coming soon
           </Button>
         ) : (
-          <Button className="action-button w-full" disabled>
-            Coming Soon
+          <Button className="action-button w-full" asChild>
+            <Link to={buttonLink}>{buttonText}</Link>
           </Button>
         )}
       </CardFooter>

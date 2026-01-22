@@ -3,9 +3,9 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { useEffect } from "react";
 import { supabase } from "./integrations/supabase/client";
-
-// Pages
+import { isAdminLoggedIn } from "./lib/adminAuth";
 import Index from "./pages/Index";
 import SignIn from "./pages/SignIn";
 import Register from "./pages/Register";
@@ -22,11 +22,9 @@ import FAQ from "./pages/FAQ";
 import Feedback from "./pages/Feedback";
 import TaxiBooking from "./pages/TaxiBooking";
 import Jobs from "./pages/Jobs";
-
-// Components
+import Roommates from "./pages/Roommates";
+import Auth from "./pages/Auth";
 import AIAssistant from "./components/AIAssistant";
-import { useEffect } from "react";
-import { isAdminLoggedIn } from "./lib/adminAuth";
 
 const queryClient = new QueryClient();
 
@@ -55,11 +53,6 @@ const App = () => {
             <Route path="/" element={<Index />} />
             <Route path="/services" element={<Index />} />
             
-            {/* Authentication Routes */}
-            <Route path="/signin" element={<SignIn />} />
-            <Route path="/register" element={<Register />} />
-            <Route path="/welcome" element={<Welcome />} />
-            
             {/* FIND Homes - Active Feature */}
             <Route path="/homes" element={<Homes />} />
             <Route path="/homes/:id" element={<PropertyDetails />} />
@@ -69,6 +62,9 @@ const App = () => {
 
             {/* FIND Jobs */}
             <Route path="/jobs" element={<Jobs />} />
+
+            {/* FIND Roommates */}
+            <Route path="/roommates" element={<Roommates />} />
             
             {/* User Routes */}
             <Route path="/profile" element={<Profile />} />
@@ -79,6 +75,12 @@ const App = () => {
             <Route path="/faq" element={<FAQ />} />
             <Route path="/feedback" element={<Feedback />} />
             <Route path="/contact" element={<Index />} />
+
+            {/* Authentication Routes */}
+            <Route path="/auth" element={<Auth />} />
+            <Route path="/signin" element={<SignIn />} />
+            <Route path="/register" element={<Register />} />
+            <Route path="/welcome" element={<Welcome />} />
             
             {/* Admin Routes */}
             <Route path="/admin-login" element={<AdminLogin />} />

@@ -1,8 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
-import { Link, useNavigate, useLocation } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { User, Menu, X, LogOut } from 'lucide-react';
-import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { isAdminLoggedIn } from '@/lib/adminAuth';
 
 const Navbar = () => {
@@ -34,8 +33,14 @@ const Navbar = () => {
       ]
     : [
         { path: '/', label: 'Home' },
+        { path: '/homes', label: 'Homes' },
+        { path: '/taxi', label: 'Taxi' },
+        { path: '/jobs', label: 'Jobs' },
+        { path: '/roommates', label: 'Roommates' },
         { path: '/about', label: 'About' },
+        { path: '/team', label: 'Team' },
         { path: '/faq', label: 'FAQ' },
+        { path: '/feedback', label: 'Feedback' },
       ];
 
   return (
