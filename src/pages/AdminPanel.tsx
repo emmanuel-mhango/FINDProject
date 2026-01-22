@@ -22,6 +22,7 @@ import {
 } from 'lucide-react';
 import {
   clearAdminSession,
+  getActiveAdmin,
   getPasswordDaysRemaining,
   getLastNoticeDate,
   isAdminLoggedIn,
@@ -239,8 +240,9 @@ const AdminPanel = () => {
       setAdminProfile(JSON.parse(stored));
       return;
     }
-    const name = import.meta.env.VITE_ADMIN_USERNAME || 'Administrator';
-    const email = import.meta.env.VITE_ADMIN_EMAIL || '';
+    const activeAdmin = getActiveAdmin();
+    const name = activeAdmin?.username || import.meta.env.VITE_ADMIN_USERNAME || 'Administrator';
+    const email = activeAdmin?.email || import.meta.env.VITE_ADMIN_EMAIL || '';
     setAdminProfile((prev) => ({ ...prev, name, email }));
   };
 

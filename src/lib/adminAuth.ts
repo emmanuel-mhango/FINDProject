@@ -26,13 +26,33 @@ const ADMIN_USERS: AdminIdentity[] = [
   { username: ADMIN_USERNAME_2, email: ADMIN_EMAIL_2, initialPassword: ADMIN_INITIAL_PASSWORD_2 },
 ].filter((admin) => admin.username || admin.email)
 
-const normalizeIdentifier = (value: string) => value.trim().toLowerCase()
+const normalizeIdentifier = (value?: string) => (value || '').trim().toLowerCase()
+
+const getSessionIdentifier = () => {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEYS.session)
+    if (!raw) return ''
+    const parsed = JSON.parse(raw)
+    return typeof parsed?.identifier === 'string' ? parsed.identifier : ''
+  } catch {
+    return ''
+  }
+}
+
+const resolveIdentifier = (identifier?: string) =>
+  normalizeIdentifier(
+    identifier ||
+      getSessionIdentifier() ||
+      ADMIN_USERS[0]?.email ||
+      ADMIN_USERS[0]?.username ||
+      ''
+  )
 
 const getAdminKey = (admin: AdminIdentity) =>
   (admin.email || admin.username || 'default').trim().toLowerCase()
 
-const findAdmin = (identifier: string) => {
-  const value = normalizeIdentifier(identifier)
+const findAdmin = (identifier?: string) => {
+  const value = resolveIdentifier(identifier)
   return ADMIN_USERS.find((admin) => {
     if (admin.username && value === normalizeIdentifier(admin.username)) return true
     if (admin.email && value === normalizeIdentifier(admin.email)) return true
@@ -49,7 +69,7 @@ export const getAdminIdentities = () => ADMIN_USERS
 
 export const hasAdminIdentity = () => ADMIN_USERS.length > 0
 
-export const getStoredAdminPassword = (identifier: string) => {
+export const getStoredAdminPassword = (identifier?: string) => {
   const admin = findAdmin(identifier)
   if (!admin) return ''
   const key = getAdminKey(admin)
@@ -76,7 +96,7 @@ export const isInitialAdminPassword = (identifier: string, password: string) => 
   return Boolean(admin?.initialPassword && password === admin.initialPassword)
 }
 
-export const getPasswordUpdatedAt = (identifier: string) => {
+export const getPasswordUpdatedAt = (identifier?: string) => {
   const admin = findAdmin(identifier)
   if (!admin) return null
   const key = getAdminKey(admin)
@@ -84,14 +104,14 @@ export const getPasswordUpdatedAt = (identifier: string) => {
   return value ? Number(value) : null
 }
 
-export const isPasswordExpired = (identifier: string) => {
+export const isPasswordExpired = (identifier?: string) => {
   const updatedAt = getPasswordUpdatedAt(identifier)
   if (!updatedAt) return true
   const daysElapsed = Math.floor((Date.now() - updatedAt) / MS_PER_DAY)
   return daysElapsed >= PASSWORD_EXPIRY_DAYS
 }
 
-export const getPasswordDaysRemaining = (identifier: string) => {
+export const getPasswordDaysRemaining = (identifier?: string) => {
   const updatedAt = getPasswordUpdatedAt(identifier)
   if (!updatedAt) return 0
   const daysElapsed = Math.floor((Date.now() - updatedAt) / MS_PER_DAY)
@@ -115,10 +135,10 @@ export const setNewAdminPassword = (identifier: string, password: string) => {
   )
 }
 
-export const setAdminSession = () => {
+export const setAdminSession = (identifier?: string) => {
   localStorage.setItem(
     STORAGE_KEYS.session,
-    JSON.stringify({ loggedIn: true, at: Date.now() })
+    JSON.stringify({ loggedIn: true, at: Date.now(), identifier })
   )
 }
 
@@ -136,6 +156,8 @@ export const isAdminLoggedIn = () => {
     return false
   }
 }
+
+export const getActiveAdmin = () => findAdmin(getSessionIdentifier())
 
 export const getLastNoticeDate = () =>
   localStorage.getItem(STORAGE_KEYS.lastNoticeDate)

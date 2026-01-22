@@ -72,7 +72,7 @@ const AdminLogin = () => {
       return;
     }
 
-    setAdminSession();
+    setAdminSession(identifier);
     navigate('/admin');
   };
 
@@ -92,7 +92,7 @@ const AdminLogin = () => {
     }
 
     setNewAdminPassword(identifier, newPassword);
-    setAdminSession();
+    setAdminSession(identifier);
     toast({
       title: 'Password Updated',
       description: 'Admin password updated successfully.',
