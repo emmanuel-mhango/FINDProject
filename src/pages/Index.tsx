@@ -17,6 +17,12 @@ const Index = () => {
   const userData = localStorage.getItem('userData');
   const user = userData ? JSON.parse(userData) : null;
   const isLoggedIn = !!user;
+  const displayName =
+    user?.user_metadata?.first_name ||
+    user?.firstName ||
+    (user?.user_metadata?.full_name ? user.user_metadata.full_name.split(' ')[0] : '') ||
+    (user?.fullName ? user.fullName.split(' ')[0] : '') ||
+    (user?.email ? user.email.split('@')[0] : '');
 
   const scrollToServices = () => {
     const servicesSection = document.getElementById('our-services');
@@ -144,7 +150,7 @@ const Index = () => {
           {isLoggedIn ? (
             <>
               <h1 className="text-4xl md:text-6xl font-bold mb-6 animate-fade-in font-inter font-extrabold">
-                Welcome back, {user.firstName}!
+                Welcome back, {displayName || 'there'}!
               </h1>
               <p className="text-xl md:text-2xl mb-8 max-w-2xl mx-auto animate-fade-in font-inter">
                 Ready to explore homes or book your next taxi ride?
