@@ -376,4 +376,4 @@ For support and questions:
 
 ---
 
-**FIND** - Connecting Malawi's students with opportunities, one click at a time.
+**FIND** - Connecting Malawiian with opportunities, one click at a time.
